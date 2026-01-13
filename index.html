@@ -492,8 +492,8 @@
 
         .timer-ring {
             transform: rotate(-90deg);
-            width: 280px;
-            height: 280px;
+            width: 320px;
+            height: 320px;
         }
 
         .circle-bg {
@@ -527,13 +527,101 @@
         }
 
         .digital-clock {
-            font-size: 72px;
+            font-size: 80px;
             font-weight: 300;
             letter-spacing: 4px;
             color: var(--text-primary);
-            margin-top: 40px;
+            margin-top: 32px;
             font-feature-settings: "tnum";
             font-variant-numeric: tabular-nums;
+        }
+
+        /* Notes Section */
+        .notes-section {
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        .notes-input {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--text-secondary);
+            background-color: var(--surface);
+            color: var(--text-primary);
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        .notes-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* Log Button */
+        .log-btn {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            background-color: var(--surface);
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .log-btn:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* Log Item */
+        .log-item {
+            padding: 16px;
+            background-color: var(--background);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .log-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .log-item-duration {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .log-item-note {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-top: 8px;
+            padding: 8px;
+            background-color: var(--surface);
+            border-radius: 6px;
+        }
+
+        .log-item-note-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 4px;
         }
 
         /* Controls */
@@ -566,6 +654,11 @@
 
 <body>
 
+    <!-- Log Button -->
+    <button class="log-btn" onclick="openLogModal()">
+        📝 History
+    </button>
+
     <!-- Setup Screen -->
     <div id="setup-screen" class="screen active">
         <div class="screen-content">
@@ -594,6 +687,13 @@
                         <span>▶</span>
                     </div>
                 </div>
+
+                <!-- Notes Section -->
+                <div class="notes-section">
+                    <label class="notes-label">What's on your mind? (optional)</label>
+                    <textarea id="start-note" class="notes-input"
+                        placeholder="Set an intention or write what you're thinking..."></textarea>
+                </div>
             </div>
 
             <!-- Hidden YouTube Player & Audio Element -->
@@ -609,6 +709,19 @@
 
         <div class="screen-footer">
             <button class="btn-primary" onclick="startSession()">Begin</button>
+        </div>
+    </div>
+
+    <!-- Log Modal -->
+    <div id="log-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Meditation History</h2>
+                <span class="modal-close" onclick="closeLogModal()">×</span>
+            </div>
+            <div id="log-list" class="audio-list">
+                <!-- Populated by JS -->
+            </div>
         </div>
     </div>
 
@@ -669,7 +782,6 @@
                     <circle class="circle-bg" cx="150" cy="150" r="140"></circle>
                     <circle class="circle-progress" cx="150" cy="150" r="140"></circle>
                 </svg>
-                <div class="timer-text" id="time-display">00:00</div>
             </div>
             <div class="digital-clock" id="digital-clock">00:00</div>
         </div>
@@ -701,10 +813,15 @@
         let selectedAudioId = localStorage.getItem('last_audio_id') || null;
         let ytPlayer = null;
         let audioPlayer = null;
-        let currentAudioType = null; // 'youtube' or 'direct'
+        let currentAudioType = null;
         let startBell = null;
         let intervalBell = null;
         let endBell = null;
+
+        // Meditation Log
+        let meditationLogs = JSON.parse(localStorage.getItem('meditation_logs') || '[]');
+        let currentSessionId = null;
+        let sessionStartTime = null;
 
         // Elements
         const setupScreen = document.getElementById('setup-screen');
@@ -722,6 +839,9 @@
         const selectedIntervalName = document.getElementById('selected-interval-name');
         const addSection = document.getElementById('add-section');
         const digitalClock = document.getElementById('digital-clock');
+        const startNoteInput = document.getElementById('start-note');
+        const logModal = document.getElementById('log-modal');
+        const logList = document.getElementById('log-list');
         audioPlayer = document.getElementById('audio-player');
         startBell = document.getElementById('start-bell');
         intervalBell = document.getElementById('interval-bell');
@@ -799,6 +919,75 @@
                     closeIntervalModal();
                 }
             });
+
+            logModal.addEventListener('click', (e) => {
+                if (e.target === logModal) {
+                    closeLogModal();
+                }
+            });
+        }
+
+        // --- Log Functions ---
+        function openLogModal() {
+            logModal.classList.add('active');
+            renderLogList();
+        }
+
+        function closeLogModal() {
+            logModal.classList.remove('active');
+        }
+
+        function renderLogList() {
+            logList.innerHTML = '';
+
+            if (meditationLogs.length === 0) {
+                logList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 20px;">No meditation sessions yet</p>';
+                return;
+            }
+
+            // Show most recent first
+            const sortedLogs = [...meditationLogs].reverse();
+
+            sortedLogs.forEach(log => {
+                const el = document.createElement('div');
+                el.className = 'log-item';
+
+                const startDate = new Date(log.startTime);
+                const endDate = log.endTime ? new Date(log.endTime) : null;
+
+                let html = `
+                        <div class="log-item-header">
+                            <span>${startDate.toLocaleDateString()} ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span>${endDate ? endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'In Progress'}</span>
+                        </div>
+                        <div class="log-item-duration">${log.duration} min</div>
+                    `;
+
+                if (log.startNote) {
+                    html += `
+                            <div class="log-item-note">
+                                <div class="log-item-note-label">Before</div>
+                                ${log.startNote}
+                            </div>
+                        `;
+                }
+
+                if (log.endNote) {
+                    html += `
+                            <div class="log-item-note">
+                                <div class="log-item-note-label">After</div>
+                                ${log.endNote}
+                            </div>
+                        `;
+                }
+
+                el.innerHTML = html;
+                logList.appendChild(el);
+            });
+        }
+
+        function saveLogs() {
+            localStorage.setItem('meditation_logs', JSON.stringify(meditationLogs));
         }
 
         // --- YouTube API ---
@@ -1059,8 +1248,6 @@
 
             // Insert before the last child (which is the + button) if it exists, else append
             // But initially the + button isn't there during loop.
-            // So we need a stable way.
-            // Simplest: Just append to list. The Init loop runs once.
             // When adding custom, we insert before the last element (the + button).
 
             if (durationList.lastElementChild && durationList.lastElementChild.textContent === '+') {
@@ -1117,6 +1304,21 @@
 
             // Play start bell
             playBell('start');
+
+            // Create session log
+            currentSessionId = Date.now();
+            sessionStartTime = new Date();
+            const startNote = startNoteInput.value.trim();
+
+            meditationLogs.push({
+                id: currentSessionId,
+                startTime: sessionStartTime.toISOString(),
+                endTime: null,
+                duration: selectedDuration,
+                startNote: startNote || null,
+                endNote: null
+            });
+            saveLogs();
 
             // Start Background Audio if selected
             if (selectedAudioId) {
@@ -1227,6 +1429,25 @@
 
         function stopTimer() {
             clearInterval(timerInterval);
+
+            // Prompt for end note
+            const endNote = prompt("How do you feel after meditation? (optional)");
+
+            // Update session log
+            if (currentSessionId) {
+                const logIndex = meditationLogs.findIndex(l => l.id === currentSessionId);
+                if (logIndex !== -1) {
+                    meditationLogs[logIndex].endTime = new Date().toISOString();
+                    meditationLogs[logIndex].endNote = endNote || null;
+                    saveLogs();
+                }
+            }
+
+            // Reset session
+            currentSessionId = null;
+            sessionStartTime = null;
+            startNoteInput.value = '';
+
             timerScreen.classList.remove('active');
             setupScreen.classList.add('active');
             // Reset ring
