@@ -869,16 +869,27 @@
                 return;
             }
 
-            try {
-                // Use YouTube oEmbed to get playlist info (limited, but no API key needed)
-                // For full playlist support, we'd need YouTube Data API
-                // As a workaround, we'll extract from the URL and let user know
-                alert("Playlist detected! Note: Due to API limitations, please add individual videos from the playlist.");
+            // Check if URL also contains a specific video ID
+            const videoId = extractVideoID(url);
+
+            if (videoId) {
+                // Playlist URL with a specific video - add that video
+                const title = await fetchYouTubeTitle(videoId);
+                savedAudios.push({ id: videoId, name: title, type: 'youtube' });
+                saveAudios();
+                renderAudioList();
+                selectAudio(videoId);
                 audioUrlInput.value = '';
                 addSection.classList.remove('active');
-            } catch (error) {
-                console.error('Error processing playlist:', error);
-                alert("Error processing playlist. Please add individual videos.");
+
+                // Inform user about playlist limitation
+                setTimeout(() => {
+                    alert("Added the video from playlist! Note: Full playlist extraction requires YouTube API key. Please add other videos individually.");
+                }, 100);
+            } else {
+                // Pure playlist URL without specific video
+                alert("Playlist detected! Unfortunately, extracting all videos from a playlist requires YouTube Data API key.\n\nTo add videos:\n1. Open the playlist on YouTube\n2. Copy individual video URLs\n3. Paste them here one by one");
+                audioUrlInput.value = '';
                 addSection.classList.remove('active');
             }
         }
