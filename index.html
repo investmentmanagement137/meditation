@@ -694,6 +694,34 @@
             background: rgba(92, 107, 192, 0.1);
         }
 
+        /* Small Add Track Button */
+        .btn-add-small {
+            background: transparent;
+            border: 1px dashed var(--text-secondary);
+            color: var(--text-secondary);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+            width: 100%;
+        }
+
+        .btn-add-small:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(92, 107, 192, 0.1);
+        }
+
+        .btn-add-small span {
+            font-size: 12px;
+        }
+
         /* Controls */
         .controls {
             display: flex;
@@ -832,7 +860,9 @@
             <div id="audio-list" class="audio-list">
                 <!-- Populated by JS -->
             </div>
-            <button class="add-track-btn" onclick="openAddAudioModal()">+ Add New Track</button>
+            <button class="btn-add-small" onclick="openAddAudioModal()">
+                <span>➕</span> Add New Track
+            </button>
         </div>
     </div>
 
@@ -843,10 +873,13 @@
                 <h2>Add New Audio</h2>
                 <span class="modal-close" onclick="closeAddAudioModal()">×</span>
             </div>
-            <input type="text" id="audio-url-input" class="input-field" placeholder="Paste YouTube or audio file URL..."
-                style="margin-top: 8px;">
-            <button class="btn-primary" onclick="addAudioFromInput()" style="max-width: 100%; margin-top: 12px;">Add
-                Track</button>
+            <div style="width: 100%; margin-top: 16px;">
+                <input type="text" id="audio-url-input" class="input-field"
+                    placeholder="Paste YouTube or audio file URL..." style="width: 100%; box-sizing: border-box;">
+                <button class="btn-primary" onclick="addAudioFromInput()"
+                    style="width: 100%; max-width: none; margin-top: 12px; margin-left: 0; margin-right: 0;">Add
+                    Track</button>
+            </div>
         </div>
     </div>
 
