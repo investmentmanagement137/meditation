@@ -182,23 +182,28 @@
         .duration-option {
             flex: 0 0 80px;
             height: 80px;
-            background-color: var(--surface);
-            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 24px;
-            font-weight: bold;
-            color: var(--text-secondary);
+            font-weight: 500;
+            border-radius: 20px;
+            background-color: var(--surface);
             cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .duration-option:hover {
+            background-color: var(--surface-hover);
+            transform: scale(1.05);
+            border-color: var(--primary);
         }
 
         .duration-option.selected {
             background-color: var(--primary);
-            color: var(--background);
-            transform: scale(1.05);
+            color: white;
+            transform: scale(1.1);
         }
 
         /* Button */
@@ -293,7 +298,8 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: var(--background);
+            /* Changed to solid background */
             align-items: center;
             justify-content: center;
         }
@@ -303,7 +309,7 @@
         }
 
         .modal-content {
-            background-color: var(--surface);
+            background-color: #1e1e2e;
             padding: 24px;
             border-radius: 16px;
             width: 90%;
@@ -311,6 +317,14 @@
             max-height: 80vh;
             display: flex;
             flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (prefers-color-scheme: light) {
+            .modal-content {
+                background-color: #ffffff;
+                border: 1px solid rgba(0, 0, 0, 0.1);
+            }
         }
 
         .modal-header {
@@ -1012,12 +1026,25 @@
                 const startDate = new Date(log.startTime);
                 const endDate = log.endTime ? new Date(log.endTime) : null;
 
+                // Calculate actual session duration
+                let actualDuration = log.duration + ' min (planned)';
+                if (endDate) {
+                    const diffMs = endDate - startDate;
+                    const diffMin = Math.floor(diffMs / 60000);
+                    const diffSec = Math.floor((diffMs % 60000) / 1000);
+                    actualDuration = `${diffMin}m ${diffSec}s (actual)`;
+                }
+
                 let html = `
                         <div class="log-item-header">
-                            <span>${startDate.toLocaleDateString()} ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                            <span>${endDate ? endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'In Progress'}</span>
+                            <span><strong>Date:</strong> ${startDate.toLocaleDateString()}</span>
                         </div>
-                        <div class="log-item-duration">${log.duration} min</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; font-size: 13px;">
+                            <div><span style="color: var(--text-secondary);">Setup:</span> ${log.duration} min</div>
+                            <div><span style="color: var(--text-secondary);">Duration:</span> ${actualDuration}</div>
+                            <div><span style="color: var(--text-secondary);">Start:</span> ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                            <div><span style="color: var(--text-secondary);">End:</span> ${endDate ? endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'In Progress'}</div>
+                        </div>
                     `;
 
                 if (log.startNote) {
