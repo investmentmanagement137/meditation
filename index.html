@@ -1197,6 +1197,12 @@ Respond with ONLY the JSON, no markdown or explanation.`
         // --- Log Functions ---
         function openLogModal() {
             logModal.classList.add('active');
+            // Show if API key is already saved
+            if (geminiApiKey) {
+                geminiApiInput.placeholder = 'API Key saved ✓';
+            } else {
+                geminiApiInput.placeholder = 'Gemini API Key...';
+            }
             renderLogList();
         }
 
