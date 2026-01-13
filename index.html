@@ -258,21 +258,34 @@
             border-color: var(--primary);
         }
 
-        /* Settings Card */
-        .settings-card {
-            background-color: var(--surface);
-            width: 100%;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: auto;
-            /* Push to required space */
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-
-        .setting-row {
+        /* Settings Row */
+        .settings-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 16px 20px;
+            background-color: var(--surface);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .settings-row:hover {
+            background-color: rgba(92, 107, 192, 0.05);
+        }
+
+        .settings-row-label {
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+
+        .settings-row-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 16px;
         }
 
         /* Toggle Switch */
@@ -402,21 +415,24 @@
         </div>
         <p style="margin-bottom: 40px; color: var(--text-secondary);">Minutes</p>
 
-        <div class="settings-card">
-            <div class="setting-row">
-                <span>Interval</span>
-                <select id="interval-select" class="dropdown">
-                    <option value="0">None</option>
-                    <option value="1">Every Minute</option>
-                    <option value="5">Every 5 Minutes</option>
-                    <option value="half">Halfway</option>
-                </select>
-            </div>
+        <!-- Interval Section -->
+        <div class="settings-row" style="cursor: default;">
+            <span class="settings-row-label">Interval</span>
+            <select id="interval-select" class="dropdown">
+                <option value="0">None</option>
+                <option value="1">Every Minute</option>
+                <option value="5">Every 5 Minutes</option>
+                <option value="half">Halfway</option>
+            </select>
         </div>
 
-        <div class="audio-display" onclick="openAudioModal()">
-            <span id="selected-audio-name">No Background Audio</span>
-            <span style="color: var(--text-secondary);">▼</span>
+        <!-- Background Audio Section -->
+        <div class="settings-row" onclick="openAudioModal()">
+            <span class="settings-row-label">Background Audio</span>
+            <div class="settings-row-value">
+                <span id="selected-audio-name">None</span>
+                <span>▶</span>
+            </div>
         </div>
 
         <!-- Hidden YouTube Player & Audio Element -->
@@ -696,10 +712,10 @@
 
         function updateAudioDisplay() {
             if (!selectedAudioId) {
-                selectedAudioName.textContent = 'No Background Audio';
+                selectedAudioName.textContent = 'None';
             } else {
                 const audio = savedAudios.find(a => a.id === selectedAudioId);
-                selectedAudioName.textContent = audio ? audio.name : 'No Background Audio';
+                selectedAudioName.textContent = audio ? audio.name : 'None';
             }
         }
 
