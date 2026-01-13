@@ -1234,6 +1234,7 @@ Respond with ONLY the JSON, no markdown or explanation.`
                 let html = `
                         <div class="log-item-header">
                             <span><strong>Date:</strong> ${startDate.toLocaleDateString()}</span>
+                            <span class="delete-btn" onclick="deleteLog(event, '${log.id}')" style="cursor: pointer;">✕</span>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; font-size: 13px;">
                             <div><span style="color: var(--text-secondary);">Setup:</span> ${log.duration} min</div>
@@ -1284,6 +1285,15 @@ Respond with ONLY the JSON, no markdown or explanation.`
 
         function saveLogs() {
             localStorage.setItem('meditation_logs', JSON.stringify(meditationLogs));
+        }
+
+        function deleteLog(event, logId) {
+            event.stopPropagation();
+            if (confirm('Delete this meditation session?')) {
+                meditationLogs = meditationLogs.filter(log => log.id != logId);
+                saveLogs();
+                renderLogList();
+            }
         }
 
         function downloadLogsAsCSV() {
