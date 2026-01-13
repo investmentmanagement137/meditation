@@ -80,7 +80,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(to top, var(--background) 70%, transparent);
+            background: transparent;
             padding: 20px 24px 24px;
             z-index: 100;
         }
@@ -533,12 +533,91 @@
             justify-content: center;
             flex: 1;
             width: 100%;
+            position: relative;
         }
 
         .timer-ring {
-            transform: rotate(-90deg);
             width: 320px;
             height: 320px;
+        }
+
+        /* Carousel Styles */
+        .quote-carousel-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 220px;
+            height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .quote-slide {
+            display: none;
+            text-align: center;
+            animation: fadeIn 0.5s;
+            cursor: grab;
+        }
+
+        .quote-slide:active {
+            cursor: grabbing;
+        }
+
+        .quote-slide.active {
+            display: block;
+        }
+
+        .quote-text {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            line-height: 1.4;
+            user-select: none;
+        }
+
+        .quote-author {
+            font-size: 12px;
+            color: var(--text-secondary);
+            user-select: none;
+        }
+
+        .carousel-dots {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+            justify-content: center;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .dot.active {
+            background: var(--primary);
+            width: 18px;
+            border-radius: 4px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .circle-bg {
@@ -573,7 +652,7 @@
 
         .digital-clock {
             font-size: 80px;
-            font-weight: 300;
+            font-weight: 800;
             letter-spacing: 4px;
             color: var(--text-primary);
             margin-top: 32px;
@@ -987,11 +1066,10 @@
     <!-- Active Timer Screen -->
     <div id="timer-screen" class="screen">
         <div class="screen-content">
-            <div class="motivation-quote" id="motivation-section" style="display: none;">
-                <div class="quote-text" id="quote-text"></div>
-                <div class="quote-support" id="quote-support"></div>
-            </div>
             <div class="timer-container">
+                <div class="quote-carousel-container" id="quote-carousel">
+                    <!-- Slides injected by JS -->
+                </div>
                 <svg class="timer-ring" viewBox="0 0 300 300">
                     <circle class="circle-bg" cx="150" cy="150" r="140"></circle>
                     <circle class="circle-progress" cx="150" cy="150" r="140"></circle>
@@ -1061,9 +1139,17 @@
         const logModal = document.getElementById('log-modal');
         const logList = document.getElementById('log-list');
         const addAudioModal = document.getElementById('add-audio-modal');
-        const motivationSection = document.getElementById('motivation-section');
-        const quoteText = document.getElementById('quote-text');
-        const quoteSupport = document.getElementById('quote-support');
+        const quoteCarousel = document.getElementById('quote-carousel');
+
+        // Carousel State
+        let quotes = [
+            { text: "Peace comes from within. Do not seek it without.", author: "Buddha" },
+            { text: "The present moment is filled with joy and happiness.", author: "Thich Nhat Hanh" },
+            { text: "In the midst of movement and chaos, keep stillness inside of you.", author: "Deepak Chopra" }
+        ];
+        let currentQuoteIndex = 0;
+        let touchStartX = 0;
+        let touchEndX = 0;
         const geminiApiInput = document.getElementById('gemini-api-key');
         audioPlayer = document.getElementById('audio-player');
         startBell = document.getElementById('start-bell');
@@ -1823,14 +1909,17 @@ Respond with ONLY the JSON, no markdown or explanation.`
 
             timerInterval = setInterval(tick, 1000);
 
+            // Carousel Init
+            initCarousel();
+
             // Only call Gemini API in background if note is not empty
             if (startNote && geminiApiKey) {
                 getMotivationalContent(startNote).then(motivation => {
                     if (motivation) {
-                        currentMotivation = motivation;
-                        quoteText.textContent = `\"${motivation.quote}\"`;
-                        quoteSupport.textContent = motivation.support;
-                        motivationSection.style.display = 'block';
+                        // Add new quote to start
+                        quotes.unshift({ text: motivation.quote, author: motivation.support });
+                        currentQuoteIndex = 0;
+                        initCarousel();
 
                         // Update log with emotions/causes
                         const logIndex = meditationLogs.findIndex(l => l.id === currentSessionId);
@@ -1844,6 +1933,67 @@ Respond with ONLY the JSON, no markdown or explanation.`
                     }
                 });
             }
+        }
+
+        // Carousel Functions
+        function initCarousel() {
+            if (!quoteCarousel) return;
+            quoteCarousel.innerHTML = '';
+            quotes.forEach((q, i) => {
+                const slide = document.createElement('div');
+                slide.className = `quote-slide ${i === currentQuoteIndex ? 'active' : ''}`;
+                slide.innerHTML = `
+                    <div class="quote-text">"${q.text}"</div>
+                    <div class="quote-author">${q.author || ''}</div>
+                `;
+                quoteCarousel.appendChild(slide);
+            });
+
+            // Touch events
+            quoteCarousel.ontouchstart = e => {
+                touchStartX = e.changedTouches[0].screenX;
+            };
+            quoteCarousel.ontouchend = e => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            };
+
+            // Dots
+            const dotsContainer = document.createElement('div');
+            dotsContainer.className = 'carousel-dots';
+            quotes.forEach((_, i) => {
+                const dot = document.createElement('div');
+                dot.className = `dot ${i === currentQuoteIndex ? 'active' : ''}`;
+                dot.onclick = (e) => { e.stopPropagation(); goToSlide(i); };
+                dotsContainer.appendChild(dot);
+            });
+            quoteCarousel.appendChild(dotsContainer);
+        }
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) nextSlide();
+            if (touchEndX > touchStartX + 50) prevSlide();
+        }
+
+        function nextSlide() {
+            goToSlide((currentQuoteIndex + 1) % quotes.length);
+        }
+
+        function prevSlide() {
+            goToSlide((currentQuoteIndex - 1 + quotes.length) % quotes.length);
+        }
+
+        function goToSlide(index) {
+            currentQuoteIndex = index;
+            const slides = quoteCarousel.querySelectorAll('.quote-slide');
+            const dots = quoteCarousel.querySelectorAll('.dot');
+
+            slides.forEach((s, i) => {
+                s.className = `quote-slide ${i === index ? 'active' : ''}`;
+            });
+            dots.forEach((d, i) => {
+                d.className = `dot ${i === index ? 'active' : ''}`;
+            });
         }
 
         function tick() {
