@@ -946,6 +946,57 @@
         </div>
     </div>
 
+    <!-- Add Custom Duration Modal -->
+    <div id="add-duration-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Add Custom Duration</h2>
+                <span class="modal-close" onclick="closeAddDurationModal()">×</span>
+            </div>
+            <div style="width: 100%; margin-top: 16px;">
+                <input type="number" id="custom-duration-input" class="input-field"
+                    placeholder="Enter duration in minutes..." style="width: 100%; box-sizing: border-box;">
+                <button class="btn-primary" onclick="addCustomDuration()"
+                    style="width: 100%; max-width: none; margin-top: 12px; margin-left: 0; margin-right: 0;">Add
+                    Duration</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Custom Interval Modal -->
+    <div id="add-interval-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Add Custom Interval</h2>
+                <span class="modal-close" onclick="closeAddIntervalModal()">×</span>
+            </div>
+            <div style="width: 100%; margin-top: 16px;">
+                <input type="number" id="custom-interval-input" class="input-field"
+                    placeholder="Enter interval in minutes..." style="width: 100%; box-sizing: border-box;">
+                <button class="btn-primary" onclick="addCustomIntervalFromModal()"
+                    style="width: 100%; max-width: none; margin-top: 12px; margin-left: 0; margin-right: 0;">Add
+                    Interval</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- End Note Modal -->
+    <div id="end-note-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>How do you feel?</h2>
+                <span class="modal-close" onclick="closeEndNoteModal()">×</span>
+            </div>
+            <div style="width: 100%; margin-top: 16px;">
+                <textarea id="end-note-input" class="input-field"
+                    placeholder="How do you feel after meditation? (optional)"
+                    style="width: 100%; box-sizing: border-box; min-height: 100px; resize: vertical; font-family: inherit;"></textarea>
+                <button class="btn-primary" onclick="saveEndNote()"
+                    style="width: 100%; max-width: none; margin-top: 12px; margin-left: 0; margin-right: 0;">Continue</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Active Timer Screen -->
     <div id="timer-screen" class="screen">
         <div class="screen-content">
@@ -1047,30 +1098,7 @@
             customEl.className = 'duration-option';
             customEl.textContent = '+';
             customEl.onclick = () => {
-                const input = prompt("Enter duration in minutes:");
-                if (input) {
-                    const min = parseInt(input);
-                    if (min > 0) {
-                        document.querySelectorAll('.duration-option').forEach(d => d.classList.remove('selected'));
-                        // Add to persistent list if not exists
-                        if (!durations.includes(min)) {
-                            durations.push(min);
-                            durations.sort((a, b) => a - b);
-                            saveDurations();
-                            // Re-render list
-                            durationList.innerHTML = ''; // Start fresh
-                            init(); // Re-init is too heavy, just re-render duration loop?
-                            // Let's just create option and reload page behavior or simpler: reload list
-                            // For simplicity, I'll just reload the page or better: clear and re-render
-                            durations.forEach(d => createDurationOption(d, d === min));
-                            durationList.appendChild(customEl);
-                            selectDuration(min, durationList.children[durations.indexOf(min)]);
-                        } else {
-                            createDurationOption(min, true);
-                        }
-                        saveConfiguration();
-                    }
-                }
+                openAddDurationModal();
             };
             durationList.appendChild(customEl);
 
@@ -1440,6 +1468,16 @@ Respond with ONLY the JSON, no markdown or explanation.`
                 el.onclick = () => selectInterval(opt.id);
                 list.appendChild(el);
             });
+
+            // Add Custom button at the end
+            const customBtn = document.createElement('div');
+            customBtn.className = 'audio-item';
+            customBtn.innerHTML = '<span style="color: var(--accent); font-weight: 500;">+ Add Custom</span>';
+            customBtn.onclick = () => {
+                closeIntervalModal();
+                openAddIntervalModal();
+            };
+            list.appendChild(customBtn);
         }
 
         function addCustomInterval() {
@@ -1897,8 +1935,23 @@ Respond with ONLY the JSON, no markdown or explanation.`
         function stopTimer() {
             clearInterval(timerInterval);
 
-            // Prompt for end note
-            const endNote = prompt("How do you feel after meditation? (optional)");
+            // Show end note modal
+            openEndNoteModal();
+
+        }
+
+        function openEndNoteModal() {
+            document.getElementById('end-note-modal').classList.add('active');
+            document.getElementById('end-note-input').value = '';
+            setTimeout(() => document.getElementById('end-note-input').focus(), 100);
+        }
+
+        function closeEndNoteModal() {
+            document.getElementById('end-note-modal').classList.remove('active');
+        }
+
+        function saveEndNote() {
+            const endNote = document.getElementById('end-note-input').value.trim();
 
             // Update session log
             if (currentSessionId) {
@@ -1938,8 +1991,72 @@ Respond with ONLY the JSON, no markdown or explanation.`
                 audioPlayer.pause();
                 audioPlayer.currentTime = 0;
             }
-            currentAudioType = null;
+
+            closeEndNoteModal();
         }
+
+        function openAddDurationModal() {
+            document.getElementById('add-duration-modal').classList.add('active');
+            document.getElementById('custom-duration-input').value = '';
+            setTimeout(() => document.getElementById('custom-duration-input').focus(), 100);
+        }
+
+        function closeAddDurationModal() {
+            document.getElementById('add-duration-modal').classList.remove('active');
+        }
+
+        function addCustomDuration() {
+            const input = document.getElementById('custom-duration-input');
+            const min = parseInt(input.value);
+            if (min > 0) {
+                document.querySelectorAll('.duration-option').forEach(d => d.classList.remove('selected'));
+                // Add to persistent list if not exists
+                if (!durations.includes(min)) {
+                    durations.push(min);
+                    durations.sort((a, b) => a - b);
+                    saveDurations();
+                    // Re-render list
+                    durationList.innerHTML = '';
+                    durations.forEach(d => createDurationOption(d, d === min));
+                    // Re-add custom button
+                    const customEl = document.createElement('div');
+                    customEl.className = 'duration-option';
+                    customEl.textContent = '+';
+                    customEl.onclick = () => openAddDurationModal();
+                    durationList.appendChild(customEl);
+                    selectDuration(min, durationList.children[durations.indexOf(min)]);
+                } else {
+                    createDurationOption(min, true);
+                }
+                saveConfiguration();
+                closeAddDurationModal();
+            }
+        }
+
+        function openAddIntervalModal() {
+            document.getElementById('add-interval-modal').classList.add('active');
+            document.getElementById('custom-interval-input').value = '';
+            setTimeout(() => document.getElementById('custom-interval-input').focus(), 100);
+        }
+
+        function closeAddIntervalModal() {
+            document.getElementById('add-interval-modal').classList.remove('active');
+        }
+
+        function addCustomIntervalFromModal() {
+            const input = document.getElementById('custom-interval-input');
+            const val = parseInt(input.value);
+            if (val > 0) {
+                if (!customIntervals.includes(val) && ![1, 5].includes(val)) {
+                    customIntervals.push(val);
+                    customIntervals.sort((a, b) => a - b);
+                    saveIntervals();
+                }
+                renderIntervalList();
+                closeAddIntervalModal();
+            }
+        }
+
 
         init();
     </script>
