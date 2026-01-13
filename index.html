@@ -46,14 +46,14 @@
         .screen {
             flex: 1;
             display: none;
-            /* Hidden by default */
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             padding: 24px;
             width: 100%;
             max-width: 600px;
             margin: 0 auto;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .screen.active {
@@ -286,6 +286,16 @@
             gap: 8px;
             color: var(--text-secondary);
             font-size: 16px;
+            max-width: 60%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .settings-row-value span:first-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         /* Toggle Switch */
@@ -413,25 +423,25 @@
         <div class="duration-scroller" id="duration-list">
             <!-- Populated by JS -->
         </div>
-        <p style="margin-bottom: 40px; color: var(--text-secondary);">Minutes</p>
+        <p style="margin-bottom: 24px; color: var(--text-secondary);">Minutes</p>
 
-        <!-- Interval Section -->
-        <div class="settings-row" style="cursor: default;">
-            <span class="settings-row-label">Interval</span>
-            <select id="interval-select" class="dropdown">
-                <option value="0">None</option>
-                <option value="1">Every Minute</option>
-                <option value="5">Every 5 Minutes</option>
-                <option value="half">Halfway</option>
-            </select>
-        </div>
+        <div style="width: 100%; margin-bottom: auto;">
+            <!-- Interval Section -->
+            <div class="settings-row" onclick="openIntervalModal()">
+                <span class="settings-row-label">Interval</span>
+                <div class="settings-row-value">
+                    <span id="selected-interval-name">None</span>
+                    <span>▶</span>
+                </div>
+            </div>
 
-        <!-- Background Audio Section -->
-        <div class="settings-row" onclick="openAudioModal()">
-            <span class="settings-row-label">Background Audio</span>
-            <div class="settings-row-value">
-                <span id="selected-audio-name">None</span>
-                <span>▶</span>
+            <!-- Background Audio Section -->
+            <div class="settings-row" onclick="openAudioModal()">
+                <span class="settings-row-label">Background Audio</span>
+                <div class="settings-row-value">
+                    <span id="selected-audio-name">None</span>
+                    <span>▶</span>
+                </div>
             </div>
         </div>
 
@@ -439,9 +449,31 @@
         <div id="youtube-player" style="display:none; position: absolute; top: -9999px;"></div>
         <audio id="audio-player" style="display:none;" loop></audio>
 
-        <div style="flex:1"></div>
+        <button class="btn-primary" onclick="startSession()" style="margin-top: 24px;">Begin</button>
+    </div>
 
-        <button class="btn-primary" onclick="startSession()">Begin</button>
+    <!-- Interval Selection Modal -->
+    <div id="interval-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Interval Bells</h2>
+                <span class="modal-close" onclick="closeIntervalModal()">×</span>
+            </div>
+            <div class="audio-list">
+                <div class="audio-item" onclick="selectInterval('0')">
+                    <span>None</span>
+                </div>
+                <div class="audio-item" onclick="selectInterval('1')">
+                    <span>Every Minute</span>
+                </div>
+                <div class="audio-item" onclick="selectInterval('5')">
+                    <span>Every 5 Minutes</span>
+                </div>
+                <div class="audio-item" onclick="selectInterval('half')">
+                    <span>Halfway</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Audio Selection Modal -->
@@ -519,6 +551,8 @@
         const audioModal = document.getElementById('audio-modal');
         const audioUrlInput = document.getElementById('audio-url-input');
         const selectedAudioName = document.getElementById('selected-audio-name');
+        const intervalModal = document.getElementById('interval-modal');
+        const selectedIntervalName = document.getElementById('selected-interval-name');
         audioPlayer = document.getElementById('audio-player');
 
         // Init
@@ -537,18 +571,8 @@
                 if (input) {
                     const min = parseInt(input);
                     if (min > 0) {
-                        // Select it immediately
-                        // Check if already exists to avoid duplicates? Optional.
-                        // For simplicity, just update the selectedDuration and visual
-
-                        // Remove previous selection
                         document.querySelectorAll('.duration-option').forEach(d => d.classList.remove('selected'));
-
-                        // We can either add it to the list or just use this slot
-                        // Let's replace the text of this slot temporarily or add a new one?
-                        // Let's add a new one before the '+' button.
-
-                        createDurationOption(min, true); // true = select it
+                        createDurationOption(min, true);
                     }
                 }
             };
@@ -556,6 +580,9 @@
 
             // Render Audio List
             renderAudioList();
+
+            // Update interval display
+            updateIntervalDisplay();
 
             // Load YouTube API
             loadYouTubeAPI();
@@ -590,6 +617,36 @@
         }
 
         // --- Modal Functions ---
+        function openIntervalModal() {
+            intervalModal.classList.add('active');
+            // Highlight current selection
+            const items = intervalModal.querySelectorAll('.audio-item');
+            items.forEach(item => item.classList.remove('selected'));
+            const intervalMap = { '0': 0, '1': 1, '5': 2, 'half': 3 };
+            const index = intervalMap[selectedInterval];
+            if (items[index]) items[index].classList.add('selected');
+        }
+
+        function closeIntervalModal() {
+            intervalModal.classList.remove('active');
+        }
+
+        function selectInterval(value) {
+            selectedInterval = value;
+            updateIntervalDisplay();
+            closeIntervalModal();
+        }
+
+        function updateIntervalDisplay() {
+            const intervalNames = {
+                '0': 'None',
+                '1': 'Every Minute',
+                '5': 'Every 5 Minutes',
+                'half': 'Halfway'
+            };
+            selectedIntervalName.textContent = intervalNames[selectedInterval] || 'None';
+        }
+
         function openAudioModal() {
             audioModal.classList.add('active');
             renderAudioList();
@@ -770,8 +827,8 @@
         }
 
         function startSession() {
-            // Get Interval Setting
-            selectedInterval = intervalSelect.value;
+            // Get Interval Setting (already set via selectedInterval variable)
+            // No need to read from select element anymore
 
             // Unlock AudioContext on user interaction
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
