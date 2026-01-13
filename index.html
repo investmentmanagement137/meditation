@@ -822,16 +822,32 @@
         </div>
     </div>
 
-    <!-- Audio Selection Modal -->\n <div id=\"audio-modal\" class=\"modal\">\n <div class=\"modal-content\">\n <div
-                class=\"modal-header\">\n <h2>Background Audio</h2>\n <span class=\"modal-close\"
-                    onclick=\"closeAudioModal()\">\u00d7</span>\n </div>\n <div id=\"audio-list\" class=\"audio-list\">
-                \n <!-- Populated by JS -->\n </div>\n <button class=\"add-track-btn\" onclick=\"openAddAudioModal()\">+
-                Add New Track</button>\n </div>\n </div>\n\n <!-- Add New Audio Modal -->\n <div id=\"add-audio-modal\"
-        class=\"modal\">\n <div class=\"modal-content\" style=\"max-width: 400px;\">\n <div class=\"modal-header\">\n
-                <h2>Add New Audio</h2>\n <span class=\"modal-close\" onclick=\"closeAddAudioModal()\">\u00d7</span>\n
-            </div>\n <input type=\"text\" id=\"audio-url-input\" class=\"input-field\" style=\"margin-bottom: 16px;\"
-                placeholder=\"Paste YouTube or audio file URL...\">\n <button class=\"btn-primary\"
-                onclick=\"addAudioFromInput()\" style=\"max-width: 100%; margin: 0;\">Add Track</button>\n </div>\n
+    <!-- Audio Selection Modal -->
+    <div id="audio-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Background Audio</h2>
+                <span class="modal-close" onclick="closeAudioModal()">×</span>
+            </div>
+            <div id="audio-list" class="audio-list">
+                <!-- Populated by JS -->
+            </div>
+            <button class="add-track-btn" onclick="openAddAudioModal()">+ Add New Track</button>
+        </div>
+    </div>
+
+    <!-- Add New Audio Modal -->
+    <div id="add-audio-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Add New Audio</h2>
+                <span class="modal-close" onclick="closeAddAudioModal()">×</span>
+            </div>
+            <input type="text" id="audio-url-input" class="input-field" placeholder="Paste YouTube or audio file URL..."
+                style="margin-top: 8px;">
+            <button class="btn-primary" onclick="addAudioFromInput()" style="max-width: 100%; margin-top: 12px;">Add
+                Track</button>
+        </div>
     </div>
 
     <!-- Active Timer Screen -->
@@ -897,11 +913,11 @@
         const selectedAudioName = document.getElementById('selected-audio-name');
         const intervalModal = document.getElementById('interval-modal');
         const selectedIntervalName = document.getElementById('selected-interval-name');
-        const addSection = document.getElementById('add-section');
         const digitalClock = document.getElementById('digital-clock');
         const startNoteInput = document.getElementById('start-note');
         const logModal = document.getElementById('log-modal');
         const logList = document.getElementById('log-list');
+        const addAudioModal = document.getElementById('add-audio-modal');
         audioPlayer = document.getElementById('audio-player');
         startBell = document.getElementById('start-bell');
         intervalBell = document.getElementById('interval-bell');
@@ -983,6 +999,12 @@
             logModal.addEventListener('click', (e) => {
                 if (e.target === logModal) {
                     closeLogModal();
+                }
+            });
+
+            addAudioModal.addEventListener('click', (e) => {
+                if (e.target === addAudioModal) {
+                    closeAddAudioModal();
                 }
             });
         }
@@ -1156,21 +1178,22 @@
 
         function openAudioModal() {
             audioModal.classList.add('active');
-            addSection.classList.remove('active'); // Hide add section by default
             renderAudioList();
         }
 
         function closeAudioModal() {
             audioModal.classList.remove('active');
-            addSection.classList.remove('active');
-            audioUrlInput.value = '';
         }
 
-        function toggleAddSection() {
-            addSection.classList.toggle('active');
-            if (addSection.classList.contains('active')) {
-                audioUrlInput.focus();
-            }
+        function openAddAudioModal() {
+            addAudioModal.classList.add('active');
+            audioUrlInput.value = '';
+            setTimeout(() => audioUrlInput.focus(), 100);
+        }
+
+        function closeAddAudioModal() {
+            addAudioModal.classList.remove('active');
+            audioUrlInput.value = '';
         }
 
         // --- Audio Logic ---
@@ -1193,8 +1216,7 @@
                 saveAudios();
                 renderAudioList();
                 selectAudio(vidId);
-                audioUrlInput.value = '';
-                addSection.classList.remove('active'); // Hide after adding
+                closeAddAudioModal();
             } else if (isAudioURL(url)) {
                 // Direct audio file
                 const name = prompt("Enter a name for this track:", "Audio Track");
@@ -1204,8 +1226,7 @@
                 saveAudios();
                 renderAudioList();
                 selectAudio(audioId);
-                audioUrlInput.value = '';
-                addSection.classList.remove('active'); // Hide after adding
+                closeAddAudioModal();
             } else {
                 alert("Please enter a valid YouTube URL, playlist, or audio file URL (.mp3, .wav, .ogg)");
             }
@@ -1229,16 +1250,8 @@
                 // Playlist URL with a specific video - add that video
                 const title = await fetchYouTubeTitle(videoId);
                 savedAudios.push({ id: videoId, name: title, type: 'youtube' });
-                saveAudios();
-                renderAudioList();
-                selectAudio(videoId);
-                audioUrlInput.value = '';
-                addSection.classList.remove('active');
-
-                // Inform user about playlist limitation
-                setTimeout(() => {
-                    alert("Added the video from playlist! Note: Full playlist extraction requires YouTube API key. Please add other videos individually.");
-                }, 100);
+                alert("Playlist detected! Note: Full playlist extraction requires YouTube API key. Please add individual videos.");
+                closeAddAudioModal();
             } else {
                 // Pure playlist URL without specific video
                 alert("Playlist detected! Unfortunately, extracting all videos from a playlist requires YouTube Data API key.\n\nTo add videos:\n1. Open the playlist on YouTube\n2. Copy individual video URLs\n3. Paste them here one by one");
