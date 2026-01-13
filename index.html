@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meditation Timer</title>
+    <style>
+        :root {
+            --primary: #5C6BC0;
+            --background: #F5F5F7;
+            --surface: #FFFFFF;
+            --text-primary: #1E1E1E;
+            --text-secondary: #757575;
+            --ring-track: #e0e0e0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary: #81D4FA;
+                --background: #121212;
+                --surface: #1E1E1E;
+                --text-primary: #E0E0E0;
+                --text-secondary: #B0BEC5;
+                --ring-track: #333333;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .screen {
+            flex: 1;
+            display: none;
+            /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* Typography */
+        h1 {
+            font-weight: 300;
+            font-size: 2rem;
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+
+        /* Duration Selector */
+        .duration-scroller {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            width: 100%;
+            padding: 10px 0;
+            margin-bottom: 40px;
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        .duration-scroller::-webkit-scrollbar {
+            display: none;
+            /* Chrome/Safari */
+        }
+
+        .duration-option {
+            flex: 0 0 80px;
+            height: 80px;
+            background-color: var(--surface);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .duration-option.selected {
+            background-color: var(--primary);
+            color: var(--background);
+            transform: scale(1.05);
+        }
+
+        /* Button */
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--background);
+            border: none;
+            padding: 16px 48px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .btn-primary:active {
+            opacity: 0.8;
+        }
+
+        /* Toggle Switch & Dropdown */
+        .dropdown {
+            background-color: var(--surface);
+            color: var(--text-primary);
+            border: 1px solid var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        option {
+            background-color: var(--surface);
+            color: var(--text-primary);
+        }
+
+        /* Audio List */
+        .audio-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .audio-item {
+            padding: 10px;
+            border-radius: 8px;
+            background-color: var(--background);
+            cursor: pointer;
+            border: 2px solid transparent;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .audio-item.selected {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .audio-item .delete-btn {
+            opacity: 0.5;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+        }
+
+        .audio-item .delete-btn:hover {
+            opacity: 1;
+            color: red;
+        }
+
+        /* Settings Card */
+        .settings-card {
+            background-color: var(--surface);
+            width: 100%;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: auto;
+            /* Push to required space */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Timer Display */
+        .timer-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin-bottom: 60px;
+        }
+
+        .timer-svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .circle-bg {
+            fill: none;
+            stroke: var(--ring-track);
+            stroke-width: 8;
+        }
+
+        .circle-progress {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 880;
+            /* 2 * PI * r (approx 140 radius) */
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear;
+        }
+
+        .timer-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 64px;
+            font-weight: 300;
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-primary);
+            padding: 8px;
+            transition: transform 0.1s;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+        }
+
+        .icon-btn svg {
+            width: 64px;
+            height: 64px;
+            fill: currentState;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Setup Screen -->
+    <div id="setup-screen" class="screen active">
+        <h1>Duration</h1>
+
+        <div class="duration-scroller" id="duration-list">
+            <!-- Populated by JS -->
+        </div>
+        <p style="margin-bottom: 40px; color: var(--text-secondary);">Minutes</p>
+
+        <div class="settings-card">
+            <div class="setting-row">
+                <span>Interval</span>
+                <select id="interval-select" class="dropdown">
+                    <option value="0">None</option>
+                    <option value="1">Every Minute</option>
+                    <option value="5">Every 5 Minutes</option>
+                    <option value="half">Halfway</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="settings-card" style="margin-top: 16px;">
+            <div class="setting-row" style="margin-bottom: 12px;">
+                <span>Background Audio</span>
+                <button class="icon-btn" onclick="addAudio()" style="font-size: 24px; padding: 0;">+</button>
+            </div>
+            <div id="audio-list" class="audio-list">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- Hidden YouTube Player -->
+        <div id="youtube-player" style="display:none; position: absolute; top: -9999px;"></div>
+
+        <div style="flex:1"></div>
+
+        <button class="btn-primary" onclick="startSession()">Begin</button>
+    </div>
+
+    <!-- Active Timer Screen -->
+    <div id="timer-screen" class="screen">
+        <div class="timer-container">
+            <svg class="timer-svg" viewBox="0 0 300 300">
+                <circle class="circle-bg" cx="150" cy="150" r="140"></circle>
+                <circle class="circle-progress" cx="150" cy="150" r="140"></circle>
+            </svg>
+            <div class="timer-text" id="time-display">10:00</div>
+        </div>
+
+        <div class="controls">
+            <button class="icon-btn" id="toggle-btn" onclick="toggleTimer()">
+                <!-- Pause Icon by default -->
+                <svg viewBox="0 0 24 24">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                </svg>
+            </button>
+
+            <button class="icon-btn" onclick="stopTimer()">
+                <svg viewBox="0 0 24 24">
+                    <path d="M6 6h12v12H6z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Config
+        const durations = [5, 10, 15, 20, 30, 45, 60];
+        let selectedDuration = 10;
+        let selectedInterval = "0"; // "0", "1", "5", "half"
+        let remainingSeconds = 0;
+        let totalSeconds = 0;
+        let timerInterval = null;
+        let isPaused = false;
+        const FULL_DASH_ARRAY = 880;
+
+        // Audio Context
+        let audioCtx;
+
+        // Background Audio
+        let savedAudios = JSON.parse(localStorage.getItem('meditation_audios') || '[]');
+        let selectedAudioId = null; // YouTube Video ID
+        let ytPlayer = null;
+
+        // Elements
+        const setupScreen = document.getElementById('setup-screen');
+        const timerScreen = document.getElementById('timer-screen');
+        const durationList = document.getElementById('duration-list');
+        const timeDisplay = document.getElementById('time-display');
+        const circleProgress = document.querySelector('.circle-progress');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const intervalSelect = document.getElementById('interval-select');
+        const audioListEl = document.getElementById('audio-list');
+
+        // Init
+        function init() {
+            // Render standard options
+            durations.forEach(min => {
+                createDurationOption(min);
+            });
+
+            // Render Custom option
+            const customEl = document.createElement('div');
+            customEl.className = 'duration-option';
+            customEl.textContent = '+';
+            customEl.onclick = () => {
+                const input = prompt("Enter duration in minutes:");
+                if (input) {
+                    const min = parseInt(input);
+                    if (min > 0) {
+                        // Select it immediately
+                        // Check if already exists to avoid duplicates? Optional.
+                        // For simplicity, just update the selectedDuration and visual
+
+                        // Remove previous selection
+                        document.querySelectorAll('.duration-option').forEach(d => d.classList.remove('selected'));
+
+                        // We can either add it to the list or just use this slot
+                        // Let's replace the text of this slot temporarily or add a new one?
+                        // Let's add a new one before the '+' button.
+
+                        createDurationOption(min, true); // true = select it
+                    }
+                }
+            };
+            durationList.appendChild(customEl);
+
+            // Render Audio List
+            renderAudioList();
+
+            // Load YouTube API
+            loadYouTubeAPI();
+        }
+
+        // --- YouTube API ---
+        function loadYouTubeAPI() {
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            const firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        }
+
+        // Must be global for API to call
+        window.onYouTubeIframeAPIReady = function () {
+            ytPlayer = new YT.Player('youtube-player', {
+                height: '0',
+                width: '0',
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0,
+                    'loop': 1
+                },
+                events: {
+                    'onReady': onPlayerReady
+                }
+            });
+        };
+
+        function onPlayerReady(event) {
+            console.log("YouTube Player Ready");
+        }
+
+        // --- Audio Logic ---
+        function addAudio() {
+            const url = prompt("Enter YouTube URL (e.g. https://youtu.be/xyz...)");
+            if (!url) return;
+
+            const name = prompt("Enter a name for this track:", "New Track");
+            if (!name) return;
+
+            const vidId = extractVideoID(url);
+            if (!vidId) {
+                alert("Invalid YouTube URL");
+                return;
+            }
+
+            savedAudios.push({ id: vidId, name: name });
+            saveAudios();
+            renderAudioList();
+            selectAudio(vidId);
+        }
+
+        function extractVideoID(url) {
+            var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            var match = url.match(regExp);
+            if (match && match[2].length == 11) {
+                return match[2];
+            } else {
+                return null;
+            }
+        }
+
+        function saveAudios() {
+            localStorage.setItem('meditation_audios', JSON.stringify(savedAudios));
+        }
+
+        function renderAudioList() {
+            audioListEl.innerHTML = '';
+
+            // Header "None" option
+            const noneEl = document.createElement('div');
+            noneEl.className = `audio-item ${selectedAudioId === null ? 'selected' : ''}`;
+            noneEl.innerHTML = '<span>No Background Audio</span>';
+            noneEl.onclick = () => selectAudio(null);
+            audioListEl.appendChild(noneEl);
+
+            savedAudios.forEach((audio, index) => {
+                const el = document.createElement('div');
+                el.className = `audio-item ${selectedAudioId === audio.id ? 'selected' : ''}`;
+                el.innerHTML = `
+                        <span>${audio.name}</span>
+                        <span class="delete-btn" onclick="deleteAudio(event, ${index})">✕</span>
+                    `;
+                el.onclick = (e) => {
+                    if (!e.target.classList.contains('delete-btn')) selectAudio(audio.id);
+                };
+                audioListEl.appendChild(el);
+            });
+        }
+
+        function deleteAudio(e, index) {
+            e.stopPropagation();
+            if (confirm("Delete this track?")) {
+                savedAudios.splice(index, 1);
+                saveAudios();
+                if (savedAudios.length === 0 || selectedAudioId === savedAudios[index]?.id) {
+                    selectedAudioId = null;
+                }
+                renderAudioList();
+            }
+        }
+
+        function selectAudio(id) {
+            selectedAudioId = id;
+            renderAudioList();
+        }
+
+        function createDurationOption(min, autoSelect = false) {
+            const el = document.createElement('div');
+            el.className = `duration-option ${min === selectedDuration ? 'selected' : ''}`;
+            el.textContent = min;
+            el.onclick = () => selectDuration(min, el);
+
+            // Insert before the last child (which is the + button) if it exists, else append
+            // But initially the + button isn't there during loop.
+            // So we need a stable way.
+            // Simplest: Just append to list. The Init loop runs once.
+            // When adding custom, we insert before the last element (the + button).
+
+            if (durationList.lastElementChild && durationList.lastElementChild.textContent === '+') {
+                durationList.insertBefore(el, durationList.lastElementChild);
+            } else {
+                durationList.appendChild(el);
+            }
+
+            if (autoSelect) {
+                selectDuration(min, el);
+            }
+        }
+
+        function selectDuration(min, el) {
+            selectedDuration = min;
+            document.querySelectorAll('.duration-option').forEach(d => d.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        // Web Audio API Bell
+        function playBell() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            // Bell-like parameters
+            osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+            osc.frequency.exponentialRampToValueAtTime(130.81, audioCtx.currentTime + 1.5); // Drop pitch
+
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.05); // Attack
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.5); // Decay
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 3);
+        }
+
+        function startSession() {
+            // Get Interval Setting
+            selectedInterval = intervalSelect.value;
+
+            // Unlock AudioContext on user interaction
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            // Play start bell
+            playBell();
+
+            // Start Background Audio if selected
+            if (selectedAudioId && ytPlayer && ytPlayer.loadVideoById) {
+                ytPlayer.loadVideoById(selectedAudioId);
+                ytPlayer.setVolume(30); // Set to 30% volume for background
+            }
+
+            setupScreen.classList.remove('active');
+            timerScreen.classList.add('active');
+
+            totalSeconds = selectedDuration * 60;
+            remainingSeconds = totalSeconds;
+            isPaused = false;
+
+            updateDisplay();
+            updatePlayPauseIcon();
+
+            timerInterval = setInterval(tick, 1000);
+        }
+
+        function tick() {
+            if (isPaused) return;
+
+            if (remainingSeconds > 0) {
+                remainingSeconds--;
+                updateDisplay();
+                checkInterval();
+            } else {
+                playBell(); // End bell
+                stopTimer();
+            }
+        }
+
+        function checkInterval() {
+            const elapsed = totalSeconds - remainingSeconds;
+            if (elapsed === 0) return;
+
+            let shouldRing = false;
+
+            if (selectedInterval === "half") {
+                // Check if exactly halfway
+                // Use a small window or exact check? Exact is fine for 1s ticks usually
+                /* 
+                   If total is 10 mins (600s), half is 300s. 
+                   remaining will be 300.
+                */
+                if (remainingSeconds === totalSeconds / 2) shouldRing = true;
+            } else {
+                const intervalMin = parseInt(selectedInterval);
+                if (intervalMin > 0) {
+                    const intervalSec = intervalMin * 60;
+                    // Ring if elapsed is a multiple of interval
+                    // And not the very end (handled separately)
+                    if (elapsed % intervalSec === 0 && remainingSeconds > 0) {
+                        shouldRing = true;
+                    }
+                }
+            }
+
+            if (shouldRing) playBell();
+        }
+
+        function updateDisplay() {
+            const m = Math.floor(remainingSeconds / 60).toString().padStart(2, '0');
+            const s = (remainingSeconds % 60).toString().padStart(2, '0');
+            timeDisplay.textContent = `${m}:${s}`;
+
+            // progress
+            const fraction = remainingSeconds / totalSeconds;
+            const offset = FULL_DASH_ARRAY - (fraction * FULL_DASH_ARRAY);
+            circleProgress.style.strokeDashoffset = offset;
+        }
+
+        function toggleTimer() {
+            isPaused = !isPaused;
+            updatePlayPauseIcon();
+            if (ytPlayer && ytPlayer.pauseVideo) {
+                if (isPaused) ytPlayer.pauseVideo();
+                else ytPlayer.playVideo();
+            }
+        }
+
+        function updatePlayPauseIcon() {
+            if (isPaused) {
+                // Show Play Icon
+                toggleBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+            } else {
+                // Show Pause Icon
+                toggleBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+            }
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerScreen.classList.remove('active');
+            setupScreen.classList.add('active');
+            // Reset ring
+            circleProgress.style.strokeDashoffset = 0;
+
+            // Stop Audio
+            if (ytPlayer && ytPlayer.stopVideo) {
+                ytPlayer.stopVideo();
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
