@@ -898,15 +898,6 @@
                 <h2>Interval Bells</h2>
                 <span class="modal-close" onclick="closeIntervalModal()">×</span>
             </div>
-
-            <!-- Custom Interval Input -->
-            <div style="padding: 12px; border-bottom: 1px solid var(--border-color); display: flex; gap: 8px;">
-                <input type="number" id="custom-interval-input" placeholder="Min"
-                    style="width: 60px; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;">
-                <button class="btn-primary" onclick="addCustomInterval()"
-                    style="padding: 8px 16px; font-size: 13px;">Add Custom</button>
-            </div>
-
             <div id="interval-list" class="audio-list">
                 <!-- Populated by JS -->
             </div>
@@ -2010,10 +2001,21 @@ Respond with ONLY the JSON, no markdown or explanation.`
             const min = parseInt(input.value);
             if (min > 0) {
                 document.querySelectorAll('.duration-option').forEach(d => d.classList.remove('selected'));
+
                 // Add to persistent list if not exists
                 if (!durations.includes(min)) {
                     durations.push(min);
                     durations.sort((a, b) => a - b);
+
+                    // Keep only the 5 most recent custom durations (excluding default ones)
+                    const defaultDurations = [5, 10, 15, 20, 30, 45, 60];
+                    const customDurations = durations.filter(d => !defaultDurations.includes(d));
+                    if (customDurations.length > 5) {
+                        // Remove oldest custom durations
+                        const toRemove = customDurations.slice(0, customDurations.length - 5);
+                        durations = durations.filter(d => !toRemove.includes(d));
+                    }
+
                     saveDurations();
                     // Re-render list
                     durationList.innerHTML = '';
