@@ -719,6 +719,8 @@
                 <h2>Meditation History</h2>
                 <span class="modal-close" onclick="closeLogModal()">×</span>
             </div>
+            <button class="btn-primary" onclick="downloadLogsAsCSV()"
+                style="margin-bottom: 16px; font-size: 14px; padding: 12px;">⬇ Download as CSV</button>
             <div id="log-list" class="audio-list">
                 <!-- Populated by JS -->
             </div>
@@ -988,6 +990,37 @@
 
         function saveLogs() {
             localStorage.setItem('meditation_logs', JSON.stringify(meditationLogs));
+        }
+
+        function downloadLogsAsCSV() {
+            if (meditationLogs.length === 0) {
+                alert('No meditation sessions to export');
+                return;
+            }
+
+            const headers = ['Date', 'Start Time', 'End Time', 'Duration (min)', 'Before Note', 'After Note'];
+            const rows = meditationLogs.map(log => {
+                const startDate = new Date(log.startTime);
+                const endDate = log.endTime ? new Date(log.endTime) : null;
+                return [
+                    startDate.toLocaleDateString(),
+                    startDate.toLocaleTimeString(),
+                    endDate ? endDate.toLocaleTimeString() : 'Incomplete',
+                    log.duration,
+                    `"${(log.startNote || '').replace(/"/g, '""')}"`,
+                    `"${(log.endNote || '').replace(/"/g, '""')}"`
+                ].join(',');
+            });
+
+            const csv = [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `meditation_log_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         // --- YouTube API ---
@@ -1398,7 +1431,6 @@
             const m = Math.floor(remainingSeconds / 60).toString().padStart(2, '0');
             const s = (remainingSeconds % 60).toString().padStart(2, '0');
             const timeStr = `${m}:${s}`;
-            timeDisplay.textContent = timeStr;
             digitalClock.textContent = timeStr;
 
             const progress = remainingSeconds / totalSeconds;
