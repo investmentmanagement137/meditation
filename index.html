@@ -117,6 +117,7 @@
             justify-content: center;
             align-items: center;
             width: 100%;
+            max-width: 600px;
         }
 
         .control-btn {
@@ -205,6 +206,7 @@
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(92, 107, 192, 0.3);
             width: 100%;
+            max-width: 600px;
             position: relative;
             overflow: hidden;
         }
@@ -522,6 +524,16 @@
             font-variant-numeric: tabular-nums;
         }
 
+        .digital-clock {
+            font-size: 72px;
+            font-weight: 300;
+            letter-spacing: 4px;
+            color: var(--text-primary);
+            margin-top: 40px;
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
+
         /* Controls */
         .controls {
             display: flex;
@@ -657,6 +669,7 @@
                 </svg>
                 <div class="timer-text" id="time-display">00:00</div>
             </div>
+            <div class="digital-clock" id="digital-clock">00:00</div>
         </div>
 
         <div class="screen-footer">
@@ -706,6 +719,7 @@
         const intervalModal = document.getElementById('interval-modal');
         const selectedIntervalName = document.getElementById('selected-interval-name');
         const addSection = document.getElementById('add-section');
+        const digitalClock = document.getElementById('digital-clock');
         audioPlayer = document.getElementById('audio-player');
         startBell = document.getElementById('start-bell');
         intervalBell = document.getElementById('interval-bell');
@@ -1040,6 +1054,16 @@
             // Get Interval Setting (already set via selectedInterval variable)
             // No need to read from select element anymore
 
+            // Request fullscreen
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(err => console.log('Fullscreen error:', err));
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) {
+                elem.msRequestFullscreen();
+            }
+
             // Unlock AudioContext on user interaction
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -1124,11 +1148,12 @@
         function updateDisplay() {
             const m = Math.floor(remainingSeconds / 60).toString().padStart(2, '0');
             const s = (remainingSeconds % 60).toString().padStart(2, '0');
-            timeDisplay.textContent = `${m}:${s}`;
+            const timeStr = `${m}:${s}`;
+            timeDisplay.textContent = timeStr;
+            digitalClock.textContent = timeStr;
 
-            // progress
-            const fraction = remainingSeconds / totalSeconds;
-            const offset = FULL_DASH_ARRAY - (fraction * FULL_DASH_ARRAY);
+            const progress = remainingSeconds / totalSeconds;
+            const offset = FULL_DASH_ARRAY * (1 - progress);
             circleProgress.style.strokeDashoffset = offset;
         }
 
@@ -1159,6 +1184,15 @@
             setupScreen.classList.add('active');
             // Reset ring
             circleProgress.style.strokeDashoffset = 0;
+
+            // Exit fullscreen
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(err => console.log('Exit fullscreen error:', err));
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
 
             // Stop Audio
             if (currentAudioType === 'youtube' && ytPlayer && ytPlayer.stopVideo) {
