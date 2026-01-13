@@ -1638,17 +1638,40 @@ Respond with ONLY the JSON, no markdown or explanation.`
             if (currentSessionId) {
                 const index = meditationLogs.findIndex(l => l.id === currentSessionId);
                 if (index !== -1) {
+                    meditationLogs[index].endTime = new Date().toISOString();
                     meditationLogs[index].endNote = note;
                     saveLogs();
                 }
             }
             closeEndNoteModal();
-            // Return to setup
+
+            // Reset Session State
+            currentSessionId = null;
+            sessionStartTime = null;
+            if (document.getElementById('start-note')) document.getElementById('start-note').value = '';
+
+            // Reset UI
             timerScreen.classList.remove('active');
             setupScreen.classList.add('active');
 
-            // Validate log update visually?
-            // Optional: alert('Session Saved');
+            // Reset ring and clock
+            if (typeof circleProgress !== 'undefined') circleProgress.style.strokeDashoffset = 0;
+            if (typeof digitalClock !== 'undefined') digitalClock.textContent = '00:00';
+
+            // Exit fullscreen
+            if (document.fullscreenElement && document.exitFullscreen) {
+                document.exitFullscreen().catch(err => console.log('Exit fullscreen error:', err));
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+
+            // Stop Audio
+            if (currentAudioType === 'youtube' && ytPlayer && ytPlayer.stopVideo) {
+                ytPlayer.stopVideo();
+            } else if (currentAudioType === 'direct' && audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+            }
         }
 
         function closeEndNoteModal() {
@@ -2121,54 +2144,7 @@ Respond with ONLY the JSON, no markdown or explanation.`
             setTimeout(() => document.getElementById('end-note-input').focus(), 100);
         }
 
-        function closeEndNoteModal() {
-            document.getElementById('end-note-modal').classList.remove('active');
-        }
 
-        function saveEndNote() {
-            const endNote = document.getElementById('end-note-input').value.trim();
-
-            // Update session log
-            if (currentSessionId) {
-                const logIndex = meditationLogs.findIndex(l => l.id === currentSessionId);
-                if (logIndex !== -1) {
-                    meditationLogs[logIndex].endTime = new Date().toISOString();
-                    meditationLogs[logIndex].endNote = endNote || null;
-                    saveLogs();
-                }
-            }
-
-            // Reset session
-            currentSessionId = null;
-            sessionStartTime = null;
-            startNoteInput.value = '';
-            currentMotivation = null;
-            motivationSection.style.display = 'none';
-
-            timerScreen.classList.remove('active');
-            setupScreen.classList.add('active');
-            // Reset ring
-            circleProgress.style.strokeDashoffset = 0;
-
-            // Exit fullscreen
-            if (document.exitFullscreen) {
-                document.exitFullscreen().catch(err => console.log('Exit fullscreen error:', err));
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) {
-                document.msExitFullscreen();
-            }
-
-            // Stop Audio
-            if (currentAudioType === 'youtube' && ytPlayer && ytPlayer.stopVideo) {
-                ytPlayer.stopVideo();
-            } else if (currentAudioType === 'direct' && audioPlayer) {
-                audioPlayer.pause();
-                audioPlayer.currentTime = 0;
-            }
-
-            closeEndNoteModal();
-        }
 
         function openAddDurationModal() {
             document.getElementById('add-duration-modal').classList.add('active');
