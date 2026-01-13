@@ -1620,7 +1620,7 @@ Respond with ONLY the JSON, no markdown or explanation.`
             }
         }
 
-        async function startSession() {
+        function startSession() {
             // Get Interval Setting (already set via selectedInterval variable)
             // No need to read from select element anymore
 
@@ -1646,16 +1646,7 @@ Respond with ONLY the JSON, no markdown or explanation.`
             sessionStartTime = new Date();
             const startNote = startNoteInput.value.trim();
 
-            // Get motivational content based on note
-            currentMotivation = await getMotivationalContent(startNote);
-
-            // Display motivation
-            if (currentMotivation) {
-                quoteText.textContent = `\"${currentMotivation.quote}\"`;
-                quoteSupport.textContent = currentMotivation.support;
-                motivationSection.style.display = 'block';
-            }
-
+            // Create initial log entry (emotions/causes will be updated async)
             meditationLogs.push({
                 id: currentSessionId,
                 startTime: sessionStartTime.toISOString(),
@@ -1663,8 +1654,8 @@ Respond with ONLY the JSON, no markdown or explanation.`
                 duration: selectedDuration,
                 startNote: startNote || null,
                 endNote: null,
-                emotions: currentMotivation?.emotions || [],
-                causes: currentMotivation?.causes || []
+                emotions: [],
+                causes: []
             });
             saveLogs();
 
@@ -1687,6 +1678,7 @@ Respond with ONLY the JSON, no markdown or explanation.`
                 }
             }
 
+            // Switch screens immediately
             setupScreen.classList.remove('active');
             timerScreen.classList.add('active');
 
@@ -1697,6 +1689,26 @@ Respond with ONLY the JSON, no markdown or explanation.`
             updatePlayPauseIcon();
 
             timerInterval = setInterval(tick, 1000);
+
+            // Only call Gemini API in background if note is not empty
+            if (startNote && geminiApiKey) {
+                getMotivationalContent(startNote).then(motivation => {
+                    if (motivation) {
+                        currentMotivation = motivation;
+                        quoteText.textContent = `\"${motivation.quote}\"`;
+                        quoteSupport.textContent = motivation.support;
+                        motivationSection.style.display = 'block';
+
+                        // Update log with emotions/causes
+                        const logIndex = meditationLogs.findIndex(l => l.id === currentSessionId);
+                        if (logIndex !== -1) {
+                            meditationLogs[logIndex].emotions = motivation.emotions || [];
+                            meditationLogs[logIndex].causes = motivation.causes || [];
+                            saveLogs();
+                        }
+                    }
+                });
+            }
         }
 
         function tick() {
