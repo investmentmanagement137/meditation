@@ -116,8 +116,9 @@
             gap: 12px;
             justify-content: center;
             align-items: center;
-            width: 100%;
-            max-width: 600px;
+            width: calc(100% + 48px);
+            margin-left: -24px;
+            margin-right: -24px;
         }
 
         .control-btn {
@@ -198,15 +199,16 @@
             background: linear-gradient(135deg, var(--primary) 0%, #7c8fd8 100%);
             color: white;
             border: none;
-            padding: 18px 24px;
+            padding: 20px 24px;
             border-radius: 12px;
             font-size: 18px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(92, 107, 192, 0.3);
-            width: 100%;
-            max-width: 600px;
+            width: calc(100% + 48px);
+            margin-left: -24px;
+            margin-right: -24px;
             position: relative;
             overflow: hidden;
         }
@@ -727,6 +729,9 @@
 
         // Init
         function init() {
+            // Load saved configuration
+            loadConfiguration();
+
             // Render standard options
             durations.forEach(min => {
                 createDurationOption(min);
@@ -743,6 +748,7 @@
                     if (min > 0) {
                         document.querySelectorAll('.duration-option').forEach(d => d.classList.remove('selected'));
                         createDurationOption(min, true);
+                        saveConfiguration();
                     }
                 }
             };
@@ -753,9 +759,46 @@
 
             // Update interval display
             updateIntervalDisplay();
+            updateAudioDisplay();
 
             // Load YouTube API
             loadYouTubeAPI();
+
+            // Setup modal close on outside click
+            setupModalCloseHandlers();
+        }
+
+        // --- Configuration Persistence ---
+        function loadConfiguration() {
+            const savedDuration = localStorage.getItem('meditation_duration');
+            if (savedDuration) {
+                selectedDuration = parseInt(savedDuration);
+            }
+
+            const savedInterval = localStorage.getItem('meditation_interval');
+            if (savedInterval) {
+                selectedInterval = savedInterval;
+            }
+        }
+
+        function saveConfiguration() {
+            localStorage.setItem('meditation_duration', selectedDuration);
+            localStorage.setItem('meditation_interval', selectedInterval);
+        }
+
+        // --- Modal Close on Outside Click ---
+        function setupModalCloseHandlers() {
+            audioModal.addEventListener('click', (e) => {
+                if (e.target === audioModal) {
+                    closeAudioModal();
+                }
+            });
+
+            intervalModal.addEventListener('click', (e) => {
+                if (e.target === intervalModal) {
+                    closeIntervalModal();
+                }
+            });
         }
 
         // --- YouTube API ---
@@ -804,6 +847,7 @@
         function selectInterval(value) {
             selectedInterval = value;
             updateIntervalDisplay();
+            saveConfiguration();
             closeIntervalModal();
         }
 
@@ -1008,7 +1052,10 @@
             const el = document.createElement('div');
             el.className = `duration-option ${min === selectedDuration ? 'selected' : ''}`;
             el.textContent = min;
-            el.onclick = () => selectDuration(min, el);
+            el.onclick = () => {
+                selectDuration(min, el);
+                saveConfiguration();
+            };
 
             // Insert before the last child (which is the + button) if it exists, else append
             // But initially the + button isn't there during loop.
