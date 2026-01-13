@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meditation Timer</title>
+    <link rel="icon" type="image/png"
+        href="https://res.cloudinary.com/makegharghaderi/image/upload/v1768284587/Generated_Image_January_13__2026_-_11_54AM-removebg-preview_wgzhjh.png">
+    <style>
+        :root {
+            --primary: #5C6BC0;
+            --primary-light: #7986CB;
+            --background: #1a1a2e;
+            --background-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+            --surface: rgba(255, 255, 255, 0.08);
+            --surface-hover: rgba(255, 255, 255, 0.12);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --ring-track: #333333;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --primary: #5C6BC0;
+                --background: #f8f9ff;
+                --background-gradient: linear-gradient(135deg, #f8f9ff 0%, #e8eaf6 50%, #f8f9ff 100%);
+                --surface: rgba(92, 107, 192, 0.1);
+                --surface-hover: rgba(92, 107, 192, 0.15);
+                --text-primary: #1a1a2e;
+                --text-secondary: rgba(26, 26, 46, 0.6);
+                --ring-track: #e0e0e0;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--background-gradient);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            height: 100vh;
+            position: relative;
+        }
+
+        .screen-content {
+            flex: 1;
+            width: 100%;
+            padding: 24px;
+            padding-bottom: 100px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .screen-footer {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, var(--background) 70%, transparent);
+            padding: 20px 24px 24px;
+            z-index: 100;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* Typography */
+        h1 {
+            font-weight: 300;
+            font-size: 2rem;
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+
+        /* Duration Selector */
+        .duration-scroller {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            width: 100%;
+            padding: 10px 0;
+            margin-bottom: 40px;
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        .duration-scroller::-webkit-scrollbar {
+            display: none;
+            /* Chrome/Safari */
+        }
+
+        /* Timer Controls */
+        .timer-controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            width: calc(100% + 48px);
+            margin-left: -24px;
+            margin-right: -24px;
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, #7c8fd8 100%);
+            border: none;
+            flex: 1;
+            padding: 18px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(92, 107, 192, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .control-btn:hover::before {
+            left: 100%;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(92, 107, 192, 0.4);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .control-btn.stop {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .control-btn.stop:hover {
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+        }
+
+        .duration-option {
+            flex: 0 0 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 500;
+            border-radius: 20px;
+            background-color: var(--surface);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .duration-option:hover {
+            background-color: var(--surface-hover);
+            transform: scale(1.05);
+            border-color: var(--primary);
+        }
+
+        .duration-option.selected {
+            background-color: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* Button */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, #7c8fd8 100%);
+            color: white;
+            border: none;
+            padding: 22px 32px;
+            border-radius: 16px;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(92, 107, 192, 0.3);
+            width: calc(100% + 48px);
+            margin-left: -24px;
+            margin-right: -24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(92, 107, 192, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        /* Begin Button Pulse Animation */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 4px 15px rgba(92, 107, 192, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 4px 25px rgba(92, 107, 192, 0.5), 0 0 40px rgba(92, 107, 192, 0.2);
+            }
+
+            100% {
+                box-shadow: 0 4px 15px rgba(92, 107, 192, 0.3);
+            }
+        }
+
+        .btn-begin {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .btn-begin:hover {
+            animation: none;
+        }
+
+        /* Toggle Switch & Dropdown */
+        .dropdown {
+            background-color: var(--surface);
+            color: var(--text-primary);
+            border: 1px solid var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        option {
+            background-color: var(--surface);
+            color: var(--text-primary);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background);
+            /* Changed to solid background */
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: #1e1e2e;
+            padding: 24px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (prefers-color-scheme: light) {
+            .modal-content {
+                background-color: #ffffff;
+                border: 1px solid rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--text-secondary);
+            background-color: var(--background);
+            color: var(--text-primary);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .add-section {
+            display: none;
+            margin-bottom: 16px;
+        }
+
+        .add-section.active {
+            display: block;
+        }
+
+        .add-track-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: transparent;
+            border: 2px dashed var(--text-secondary);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 12px;
+        }
+
+        .add-track-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Audio List */
+        .audio-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .audio-item {
+            padding: 12px;
+            border-radius: 8px;
+            background-color: var(--background);
+            cursor: pointer;
+            border: 2px solid transparent;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .audio-item:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .audio-item.selected {
+            border-color: var(--primary);
+            background-color: rgba(92, 107, 192, 0.1);
+        }
+
+        .audio-item .delete-btn {
+            opacity: 0.5;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px 8px;
+        }
+
+        .audio-item .delete-btn:hover {
+            opacity: 1;
+            color: red;
+        }
+
+        .audio-display {
+            padding: 12px;
+            background-color: var(--surface);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            border: 1px solid var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .audio-display:hover {
+            border-color: var(--primary);
+        }
+
+        /* Settings Row */
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px;
+            background-color: var(--surface);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .settings-row:hover {
+            background-color: var(--surface-hover);
+            transform: translateY(-2px);
+        }
+
+        .settings-row-label {
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+
+        .settings-row-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 16px;
+            max-width: 60%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .settings-row-value span:first-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Timer Screen */
+        .timer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            width: 100%;
+        }
+
+        .timer-ring {
+            transform: rotate(-90deg);
+            width: 320px;
+            height: 320px;
+        }
+
+        .circle-bg {
+            fill: none;
+            stroke: var(--ring-track);
+            stroke-width: 8;
+        }
+
+        .circle-progress {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 880;
+            /* 2 * PI * r (approx 140 radius) */
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear;
+        }
+
+        .timer-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: var(--text-primary);
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
+
+        .digital-clock {
+            font-size: 80px;
+            font-weight: 300;
+            letter-spacing: 4px;
+            color: var(--text-primary);
+            margin-top: 32px;
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Notes Section */
+        .notes-section {
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        .notes-input {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--text-secondary);
+            background-color: var(--surface);
+            color: var(--text-primary);
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        .notes-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* Log Button */
+        .log-btn {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            background-color: var(--surface);
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .log-btn:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* Log Item */
+        .log-item {
+            padding: 16px;
+            background-color: var(--background);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .log-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .log-item-duration {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .log-item-note {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-top: 8px;
+            padding: 8px;
+            background-color: var(--surface);
+            border-radius: 6px;
+        }
+
+        .log-item-note-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        /* Small CSV Button */
+        .btn-csv {
+            background: transparent;
+            border: 1px solid var(--text-secondary);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-csv:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(92, 107, 192, 0.1);
+        }
+
+        /* Small Add Track Button */
+        .btn-add-small {
+            background: transparent;
+            border: 1px dashed var(--text-secondary);
+            color: var(--text-secondary);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+            width: 100%;
+        }
+
+        .btn-add-small:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(92, 107, 192, 0.1);
+        }
+
+        .btn-add-small span {
+            font-size: 12px;
+        }
+
+        /* Motivational Quote */
+        .motivation-quote {
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: var(--surface);
+            border-radius: 12px;
+            max-width: 400px;
+        }
+
+        .motivation-quote .quote-text {
+            font-size: 18px;
+            font-style: italic;
+            color: var(--text-primary);
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .motivation-quote .quote-support {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Emotional Tags */
+        .emotion-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin: 2px;
+            background: rgba(92, 107, 192, 0.2);
+            color: var(--primary);
+        }
+
+        .cause-tag {
+            background: rgba(255, 152, 0, 0.2);
+            color: #FF9800;
+        }
+
+        /* API Settings */
+        .api-settings {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .api-input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--text-secondary);
+            background: var(--background);
+            color: var(--text-primary);
+            font-size: 12px;
+        }
+
+        .btn-save-api {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-primary);
+            padding: 8px;
+            transition: transform 0.1s;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+        }
+
+        .icon-btn svg {
+            width: 64px;
+            height: 64px;
+            fill: currentState;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Log Button -->
+    <button class="log-btn" onclick="openLogModal()">
+        📝 History
+    </button>
+
+    <!-- Setup Screen -->
+    <div id="setup-screen" class="screen active">
+        <div class="screen-content">
+            <h1>Duration</h1>
+
+            <div class="duration-scroller" id="duration-list">
+                <!-- Populated by JS -->
+            </div>
+            <p style="margin-bottom: 24px; color: var(--text-secondary);">Minutes</p>
+
+            <div style="width: 100%;">
+                <!-- Interval Section -->
+                <div class="settings-row" onclick="openIntervalModal()">
+                    <span class="settings-row-label">Interval</span>
+                    <div class="settings-row-value">
+                        <span id="selected-interval-name">None</span>
+                        <span>▶</span>
+                    </div>
+                </div>
+
+                <!-- Background Audio Section -->
+                <div class="settings-row" onclick="openAudioModal()">
+                    <span class="settings-row-label">Background Audio</span>
+                    <div class="settings-row-value">
+                        <span id="selected-audio-name">None</span>
+                        <span>▶</span>
+                    </div>
+                </div>
+
+                <!-- Notes Section -->
+                <div class="notes-section">
+                    <label class="notes-label">What's on your mind? (optional)</label>
+                    <textarea id="start-note" class="notes-input"
+                        placeholder="Set an intention or write what you're thinking..."></textarea>
+                </div>
+            </div>
+
+            <!-- Hidden YouTube Player & Audio Element -->
+            <div id="youtube-player" style="display:none; position: absolute; top: -9999px;"></div>
+            <audio id="audio-player" style="display:none;" loop></audio>
+            <audio id="start-bell" style="display:none;"
+                src="https://res.cloudinary.com/makegharghaderi/video/upload/v1768279504/deep-meditation-bell-hit-root-chakra-1-174455_ucqfjv.mp3"></audio>
+            <audio id="interval-bell" style="display:none;"
+                src="https://res.cloudinary.com/makegharghaderi/video/upload/v1768279564/bell-98033_y4sbfq.mp3"></audio>
+            <audio id="end-bell" style="display:none;"
+                src="https://res.cloudinary.com/makegharghaderi/video/upload/v1768279504/deep-meditation-bell-hit-root-chakra-1-174455_ucqfjv.mp3"></audio>
+        </div>
+
+        <div class="screen-footer">
+            <button class="btn-primary btn-begin" onclick="startSession()">Start Now</button>
+        </div>
+    </div>
+
+    <!-- Log Modal -->
+    <div id="log-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Meditation History</h2>
+                <span class="modal-close" onclick="closeLogModal()">×</span>
+            </div>
+            <div
+                style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <div class="api-settings">
+                    <input type="password" id="gemini-api-key" class="api-input" placeholder="Gemini API Key..."
+                        style="width: 150px;">
+                    <button class="btn-save-api" onclick="saveGeminiApiKey()">Save</button>
+                </div>
+                <button class="btn-csv" onclick="downloadLogsAsCSV()">⬇ Export CSV</button>
+            </div>
+            <div id="log-list" class="audio-list">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Interval Selection Modal -->
+    <div id="interval-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Interval Bells</h2>
+                <span class="modal-close" onclick="closeIntervalModal()">×</span>
+            </div>
+
+            <!-- Custom Interval Input -->
+            <div style="padding: 12px; border-bottom: 1px solid var(--border-color); display: flex; gap: 8px;">
+                <input type="number" id="custom-interval-input" placeholder="Min"
+                    style="width: 60px; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;">
+                <button class="btn-primary" onclick="addCustomInterval()"
+                    style="padding: 8px 16px; font-size: 13px;">Add Custom</button>
+            </div>
+
+            <div id="interval-list" class="audio-list">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Selection Modal -->
+    <div id="audio-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Background Audio</h2>
+                <span class="modal-close" onclick="closeAudioModal()">×</span>
+            </div>
+            <div id="audio-list" class="audio-list">
+                <!-- Populated by JS -->
+            </div>
+            <button class="btn-add-small" onclick="openAddAudioModal()">
+                <span>➕</span> Add New Track
+            </button>
+        </div>
+    </div>
+
+    <!-- Add New Audio Modal -->
+    <div id="add-audio-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Add New Audio</h2>
+                <span class="modal-close" onclick="closeAddAudioModal()">×</span>
+            </div>
+            <div style="width: 100%; margin-top: 16px;">
+                <input type="text" id="audio-url-input" class="input-field"
+                    placeholder="Paste YouTube or audio file URL..." style="width: 100%; box-sizing: border-box;">
+                <button class="btn-primary" onclick="addAudioFromInput()"
+                    style="width: 100%; max-width: none; margin-top: 12px; margin-left: 0; margin-right: 0;">Add
+                    Track</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Timer Screen -->
+    <div id="timer-screen" class="screen">
+        <div class="screen-content">
+            <div class="motivation-quote" id="motivation-section" style="display: none;">
+                <div class="quote-text" id="quote-text"></div>
+                <div class="quote-support" id="quote-support"></div>
+            </div>
+            <div class="timer-container">
+                <svg class="timer-ring" viewBox="0 0 300 300">
+                    <circle class="circle-bg" cx="150" cy="150" r="140"></circle>
+                    <circle class="circle-progress" cx="150" cy="150" r="140"></circle>
+                </svg>
+            </div>
+            <div class="digital-clock" id="digital-clock">00:00</div>
+        </div>
+
+        <div class="screen-footer">
+            <div class="timer-controls">
+                <button class="control-btn" id="toggle-btn" onclick="toggleTimer()">▶</button>
+                <button class="control-btn stop" onclick="stopTimer()">■</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Config
+        let durations = JSON.parse(localStorage.getItem('meditation_durations') || '[5, 10, 15, 20, 30, 45, 60]');
+        let selectedDuration = 10;
+        let selectedInterval = localStorage.getItem('selected_interval') || "0";
+        let customIntervals = JSON.parse(localStorage.getItem('custom_intervals') || '[]');
+        let remainingSeconds = 0;
+        let totalSeconds = 0;
+        let timerInterval = null;
+        let isPaused = false;
+        const FULL_DASH_ARRAY = 880;
+
+        // Audio Context
+        let audioCtx;
+
+        // Background Audio
+        let savedAudios = JSON.parse(localStorage.getItem('meditation_audios') || '[]');
+        let selectedAudioId = localStorage.getItem('last_audio_id') || null;
+        let ytPlayer = null;
+        let audioPlayer = null;
+        let currentAudioType = null;
+        let startBell = null;
+        let intervalBell = null;
+        let endBell = null;
+
+        // Meditation Log
+        let meditationLogs = JSON.parse(localStorage.getItem('meditation_logs') || '[]');
+        let currentSessionId = null;
+        let sessionStartTime = null;
+
+        // Gemini API
+        let geminiApiKey = localStorage.getItem('gemini_api_key') || '';
+        let currentMotivation = null;
+
+        // Elements
+        const setupScreen = document.getElementById('setup-screen');
+        const timerScreen = document.getElementById('timer-screen');
+        const durationList = document.getElementById('duration-list');
+        const timeDisplay = document.getElementById('time-display');
+        const circleProgress = document.querySelector('.circle-progress');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const intervalSelect = document.getElementById('interval-select');
+        const audioListEl = document.getElementById('audio-list');
+        const audioModal = document.getElementById('audio-modal');
+        const audioUrlInput = document.getElementById('audio-url-input');
+        const selectedAudioName = document.getElementById('selected-audio-name');
+        const intervalModal = document.getElementById('interval-modal');
+        const selectedIntervalName = document.getElementById('selected-interval-name');
+        const digitalClock = document.getElementById('digital-clock');
+        const startNoteInput = document.getElementById('start-note');
+        const logModal = document.getElementById('log-modal');
+        const logList = document.getElementById('log-list');
+        const addAudioModal = document.getElementById('add-audio-modal');
+        const motivationSection = document.getElementById('motivation-section');
+        const quoteText = document.getElementById('quote-text');
+        const quoteSupport = document.getElementById('quote-support');
+        const geminiApiInput = document.getElementById('gemini-api-key');
+        audioPlayer = document.getElementById('audio-player');
+        startBell = document.getElementById('start-bell');
+        intervalBell = document.getElementById('interval-bell');
+        endBell = document.getElementById('end-bell');
+
+        // Init
+        function init() {
+            // Load saved configuration
+            loadConfiguration();
+
+            // Render standard options
+            durations.forEach(min => {
+                createDurationOption(min);
+            });
+
+            // Render Custom option
+            const customEl = document.createElement('div');
+            customEl.className = 'duration-option';
+            customEl.textContent = '+';
+            customEl.onclick = () => {
+                const input = prompt("Enter duration in minutes:");
+                if (input) {
+                    const min = parseInt(input);
+                    if (min > 0) {
+                        document.querySelectorAll('.duration-option').forEach(d => d.classList.remove('selected'));
+                        // Add to persistent list if not exists
+                        if (!durations.includes(min)) {
+                            durations.push(min);
+                            durations.sort((a, b) => a - b);
+                            saveDurations();
+                            // Re-render list
+                            durationList.innerHTML = ''; // Start fresh
+                            init(); // Re-init is too heavy, just re-render duration loop?
+                            // Let's just create option and reload page behavior or simpler: reload list
+                            // For simplicity, I'll just reload the page or better: clear and re-render
+                            durations.forEach(d => createDurationOption(d, d === min));
+                            durationList.appendChild(customEl);
+                            selectDuration(min, durationList.children[durations.indexOf(min)]);
+                        } else {
+                            createDurationOption(min, true);
+                        }
+                        saveConfiguration();
+                    }
+                }
+            };
+            durationList.appendChild(customEl);
+
+            // Render Audio List
+            renderAudioList();
+
+            // Render Interval List
+            renderIntervalList();
+
+            // Update interval display
+            updateIntervalDisplay();
+            updateAudioDisplay();
+
+            // Load YouTube API
+            loadYouTubeAPI();
+
+            // Setup modal close on outside click
+            setupModalCloseHandlers();
+        }
+
+        // --- Configuration Persistence ---
+        function saveDurations() {
+            localStorage.setItem('meditation_durations', JSON.stringify(durations));
+        }
+
+        function saveIntervals() {
+            localStorage.setItem('custom_intervals', JSON.stringify(customIntervals));
+        }
+
+        function loadConfiguration() {
+            const savedDuration = localStorage.getItem('meditation_duration');
+            if (savedDuration) {
+                selectedDuration = parseInt(savedDuration);
+            }
+
+            const savedInterval = localStorage.getItem('meditation_interval');
+            if (savedInterval) {
+                selectedInterval = savedInterval;
+            }
+        }
+
+        function saveConfiguration() {
+            localStorage.setItem('meditation_duration', selectedDuration);
+            localStorage.setItem('meditation_interval', selectedInterval);
+        }
+
+        // --- Modal Close on Outside Click ---
+        function setupModalCloseHandlers() {
+            audioModal.addEventListener('click', (e) => {
+                if (e.target === audioModal) {
+                    closeAudioModal();
+                }
+            });
+
+            intervalModal.addEventListener('click', (e) => {
+                if (e.target === intervalModal) {
+                    closeIntervalModal();
+                }
+            });
+
+            logModal.addEventListener('click', (e) => {
+                if (e.target === logModal) {
+                    closeLogModal();
+                }
+            });
+
+            addAudioModal.addEventListener('click', (e) => {
+                if (e.target === addAudioModal) {
+                    closeAddAudioModal();
+                }
+            });
+        }
+
+        // --- Gemini API Functions ---
+        function saveGeminiApiKey() {
+            const key = geminiApiInput.value.trim();
+            if (key) {
+                geminiApiKey = key;
+                localStorage.setItem('gemini_api_key', key);
+                geminiApiInput.value = '';
+                geminiApiInput.placeholder = 'Key saved ✓';
+                setTimeout(() => {
+                    geminiApiInput.placeholder = 'Gemini API Key...';
+                }, 2000);
+            }
+        }
+
+        async function analyzeNoteWithGemini(note) {
+            if (!geminiApiKey || !note) return null;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: `Analyze this meditation journal entry and extract emotional metadata. Return ONLY a JSON object with these fields:
+- emotions: array of emotions (e.g., "anxious", "happy", "tired", "stressed", "calm", "sad")
+- causes: array of stressors/causes (e.g., "work", "family", "relationship", "health", "finances", "career")
+- motivationalQuote: a supportive quote for someone feeling this way
+- supportingMessage: a brief encouraging message (1-2 sentences)
+
+Journal entry: "${note}"
+
+Respond with ONLY the JSON, no markdown or explanation.`
+                            }]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                const usage = data.usageMetadata || {};
+
+                // Parse JSON from response
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const result = JSON.parse(jsonMatch[0]);
+                    result.usage = usage;
+                    result.model = 'gemini-2.5-flash';
+                    return result;
+                }
+            } catch (error) {
+                console.log('Gemini analysis error:', error);
+            }
+            return null;
+        }
+
+        async function getMotivationalContent(note) {
+            if (!geminiApiKey) {
+                // Fallback quotes if no API key
+                const fallbackQuotes = [
+                    { quote: "Peace comes from within. Do not seek it without.", support: "Take this moment to find stillness." },
+                    { quote: "The present moment is filled with joy and happiness. If you are attentive, you will see it.", support: "Focus on your breath and let go." },
+                    { quote: "In the midst of movement and chaos, keep stillness inside of you.", support: "You are creating calm within." }
+                ];
+                return fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
+            }
+
+            const analysis = await analyzeNoteWithGemini(note);
+            if (analysis) {
+                return {
+                    quote: analysis.motivationalQuote || "Breathe deeply and find your center.",
+                    support: analysis.supportingMessage || "This meditation will help you.",
+                    emotions: analysis.emotions || [],
+                    causes: analysis.causes || [],
+                    usage: analysis.usage,
+                    model: analysis.model
+                };
+            }
+            return { quote: "Find peace in this moment.", support: "You are exactly where you need to be." };
+        }
+
+        // --- Log Functions ---
+        function openLogModal() {
+            logModal.classList.add('active');
+            // Show if API key is already saved
+            if (geminiApiKey) {
+                geminiApiInput.placeholder = 'API Key saved ✓';
+            } else {
+                geminiApiInput.placeholder = 'Gemini API Key...';
+            }
+            renderLogList();
+        }
+
+        function closeLogModal() {
+            logModal.classList.remove('active');
+        }
+
+        function renderLogList() {
+            logList.innerHTML = '';
+
+            if (meditationLogs.length === 0) {
+                logList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 20px;">No meditation sessions yet</p>';
+                return;
+            }
+
+            // Show most recent first
+            const sortedLogs = [...meditationLogs].reverse();
+
+            sortedLogs.forEach(log => {
+                const el = document.createElement('div');
+                el.className = 'log-item';
+
+                const startDate = new Date(log.startTime);
+                const endDate = log.endTime ? new Date(log.endTime) : null;
+
+                // Calculate actual session duration
+                let actualDuration = log.duration + ' min (planned)';
+                if (endDate) {
+                    const diffMs = endDate - startDate;
+                    const diffMin = Math.floor(diffMs / 60000);
+                    const diffSec = Math.floor((diffMs % 60000) / 1000);
+                    actualDuration = `${diffMin}m ${diffSec}s (actual)`;
+                }
+
+                let usageInfo = '';
+                if (log.model && log.tokens) {
+                    usageInfo = `<div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">AI: ${log.model} • ${log.tokens} tokens</div>`;
+                }
+
+                let html = `
+                        <div class="log-item-header">
+                            <span><strong>Date:</strong> ${startDate.toLocaleDateString()}</span>
+                            <span class="delete-btn" onclick="deleteLog(event, '${log.id}')" style="cursor: pointer;">✕</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; font-size: 13px;">
+                            <div><span style="color: var(--text-secondary);">Setup:</span> ${log.duration} min</div>
+                            <div><span style="color: var(--text-secondary);">Duration:</span> ${actualDuration}</div>
+                            <div><span style="color: var(--text-secondary);">Start:</span> ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                            <div><span style="color: var(--text-secondary);">End:</span> ${endDate ? endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'In Progress'}</div>
+                        </div>
+                        ${usageInfo}
+                    `;
+
+                if (log.startNote) {
+                    html += `
+                            <div class="log-item-note">
+                                <div class="log-item-note-label">Before</div>
+                                ${log.startNote}
+                            </div>
+                        `;
+                }
+
+                if (log.endNote) {
+                    html += `
+                            <div class="log-item-note">
+                                <div class="log-item-note-label">After</div>
+                                ${log.endNote}
+                            </div>
+                        `;
+                }
+
+                // Show emotion and cause tags if available
+                if ((log.emotions && log.emotions.length) || (log.causes && log.causes.length)) {
+                    html += `<div style="margin-top: 8px;">`;
+                    if (log.emotions && log.emotions.length) {
+                        log.emotions.forEach(e => {
+                            html += `<span class="emotion-tag">${e}</span>`;
+                        });
+                    }
+                    if (log.causes && log.causes.length) {
+                        log.causes.forEach(c => {
+                            html += `<span class="emotion-tag cause-tag">${c}</span>`;
+                        });
+                    }
+                    html += `</div>`;
+                }
+
+                el.innerHTML = html;
+                logList.appendChild(el);
+            });
+        }
+
+        function saveLogs() {
+            localStorage.setItem('meditation_logs', JSON.stringify(meditationLogs));
+        }
+
+        function deleteLog(event, logId) {
+            event.stopPropagation();
+            if (confirm('Delete this meditation session?')) {
+                meditationLogs = meditationLogs.filter(log => log.id != logId);
+                saveLogs();
+                renderLogList();
+            }
+        }
+
+        function downloadLogsAsCSV() {
+            if (meditationLogs.length === 0) {
+                alert('No meditation sessions to export');
+                return;
+            }
+
+            const headers = ['Date', 'Start Time', 'End Time', 'Duration (min)', 'Before Note', 'After Note', 'Emotions', 'Causes', 'AI Model', 'Token Usage'];
+            const rows = meditationLogs.map(log => {
+                const startDate = new Date(log.startTime);
+                const endDate = log.endTime ? new Date(log.endTime) : null;
+                return [
+                    startDate.toLocaleDateString(),
+                    startDate.toLocaleTimeString(),
+                    endDate ? endDate.toLocaleTimeString() : 'Incomplete',
+                    log.duration,
+                    `"${(log.startNote || '').replace(/"/g, '""')}"`,
+                    `"${(log.endNote || '').replace(/"/g, '""')}"`,
+                    `"${(log.emotions || []).join(', ')}"`,
+                    `"${(log.causes || []).join(', ')}"`,
+                    log.model || '',
+                    log.tokens || ''
+                ].join(',');
+            });
+
+            const csv = [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `meditation_log_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // --- YouTube API ---
+        function loadYouTubeAPI() {
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            const firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        }
+
+        // Must be global for API to call
+        window.onYouTubeIframeAPIReady = function () {
+            ytPlayer = new YT.Player('youtube-player', {
+                height: '0',
+                width: '0',
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0,
+                    'loop': 1
+                },
+                events: {
+                    'onReady': onPlayerReady
+                }
+            });
+        };
+
+        function onPlayerReady(event) {
+            console.log("YouTube Player Ready");
+        }
+
+        // --- Modal Functions ---
+        // --- Modal Functions ---
+        function openIntervalModal() {
+            renderIntervalList();
+            intervalModal.classList.add('active');
+        }
+
+        function closeIntervalModal() {
+            intervalModal.classList.remove('active');
+        }
+
+        function renderIntervalList() {
+            const list = document.getElementById('interval-list');
+            list.innerHTML = '';
+
+            const options = [
+                { id: '0', val: 'None' },
+                { id: '1', val: 'Every Minute' },
+                { id: '5', val: 'Every 5 Minutes' },
+                { id: 'half', val: 'Halfway' }
+            ];
+
+            // Add custom intervals
+            customIntervals.forEach(min => {
+                options.push({ id: min.toString(), val: `Every ${min} Min` });
+            });
+
+            options.forEach(opt => {
+                const el = document.createElement('div');
+                el.className = `audio-item ${selectedInterval === opt.id ? 'selected' : ''}`;
+                el.innerHTML = `<span>${opt.val}</span>`;
+                // Add delete button for custom ones only (logic: numeric and not 1 or 5)
+                if (!['0', '1', '5', 'half'].includes(opt.id)) {
+                    el.innerHTML += `<span class="delete-btn" onclick="deleteInterval(event, '${opt.id}')">✕</span>`;
+                }
+                el.onclick = () => selectInterval(opt.id);
+                list.appendChild(el);
+            });
+        }
+
+        function addCustomInterval() {
+            const input = document.getElementById('custom-interval-input');
+            const val = parseInt(input.value);
+            if (val > 0) {
+                if (!customIntervals.includes(val) && ![1, 5].includes(val)) {
+                    customIntervals.push(val);
+                    customIntervals.sort((a, b) => a - b);
+                    saveIntervals();
+                }
+                input.value = '';
+                renderIntervalList();
+            }
+        }
+
+        function deleteInterval(e, id) {
+            e.stopPropagation();
+            const val = parseInt(id);
+            customIntervals = customIntervals.filter(i => i !== val);
+            saveIntervals();
+            if (selectedInterval === id) {
+                selectedInterval = '0';
+                localStorage.setItem('selected_interval', '0');
+                updateIntervalDisplay();
+            }
+            renderIntervalList();
+        }
+
+        function selectInterval(id) {
+            selectedInterval = id;
+            localStorage.setItem('selected_interval', id);
+            updateIntervalDisplay();
+            renderIntervalList();
+            closeIntervalModal();
+        }
+
+        function updateIntervalDisplay() {
+            const nameEl = document.getElementById('selected-interval-name');
+            if (selectedInterval === '0') nameEl.textContent = 'None';
+            else if (selectedInterval === 'half') nameEl.textContent = 'Halfway';
+            else if (selectedInterval === '1') nameEl.textContent = 'Every Minute';
+            else if (selectedInterval === '5') nameEl.textContent = 'Every 5 Minutes';
+            else nameEl.textContent = `Every ${selectedInterval} Min`;
+        }
+
+        function openAudioModal() {
+            audioModal.classList.add('active');
+            renderAudioList();
+        }
+
+        function closeAudioModal() {
+            audioModal.classList.remove('active');
+        }
+
+        function openAddAudioModal() {
+            addAudioModal.classList.add('active');
+            audioUrlInput.value = '';
+            setTimeout(() => audioUrlInput.focus(), 100);
+        }
+
+        function closeAddAudioModal() {
+            addAudioModal.classList.remove('active');
+            audioUrlInput.value = '';
+        }
+
+        // --- Audio Logic ---
+        async function addAudioFromInput() {
+            const url = audioUrlInput.value.trim();
+            if (!url) return;
+
+            // Check if it's a playlist
+            if (isYouTubePlaylist(url)) {
+                await addPlaylist(url);
+                return;
+            }
+
+            const vidId = extractVideoID(url);
+
+            if (vidId) {
+                // YouTube URL
+                const title = await fetchYouTubeTitle(vidId);
+                savedAudios.push({ id: vidId, name: title, type: 'youtube' });
+                saveAudios();
+                renderAudioList();
+                selectAudio(vidId);
+                closeAddAudioModal();
+            } else if (isAudioURL(url)) {
+                // Direct audio file
+                const name = prompt("Enter a name for this track:", "Audio Track");
+                if (!name) return;
+                const audioId = 'audio_' + Date.now();
+                savedAudios.push({ id: audioId, name: name, type: 'direct', url: url });
+                saveAudios();
+                renderAudioList();
+                selectAudio(audioId);
+                closeAddAudioModal();
+            } else {
+                alert("Please enter a valid YouTube URL, playlist, or audio file URL (.mp3, .wav, .ogg)");
+            }
+        }
+
+        function isYouTubePlaylist(url) {
+            return url.includes('list=');
+        }
+
+        async function addPlaylist(url) {
+            const playlistId = extractPlaylistID(url);
+            if (!playlistId) {
+                alert("Invalid playlist URL");
+                return;
+            }
+
+            // Check if URL also contains a specific video ID
+            const videoId = extractVideoID(url);
+
+            if (videoId) {
+                // Playlist URL with a specific video - add that video
+                const title = await fetchYouTubeTitle(videoId);
+                savedAudios.push({ id: videoId, name: title, type: 'youtube' });
+                alert("Playlist detected! Note: Full playlist extraction requires YouTube API key. Please add individual videos.");
+                closeAddAudioModal();
+            } else {
+                // Pure playlist URL without specific video
+                alert("Playlist detected! Unfortunately, extracting all videos from a playlist requires YouTube Data API key.\n\nTo add videos:\n1. Open the playlist on YouTube\n2. Copy individual video URLs\n3. Paste them here one by one");
+                audioUrlInput.value = '';
+                addSection.classList.remove('active');
+            }
+        }
+
+        function extractPlaylistID(url) {
+            const match = url.match(/[?&]list=([^&]+)/);
+            return match ? match[1] : null;
+        }
+
+        async function fetchYouTubeTitle(videoId) {
+            try {
+                const response = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+                const data = await response.json();
+                return data.title || 'YouTube Track';
+            } catch (error) {
+                console.error('Error fetching title:', error);
+                return 'YouTube Track';
+            }
+        }
+
+        function extractVideoID(url) {
+            var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            var match = url.match(regExp);
+            if (match && match[2].length == 11) {
+                return match[2];
+            } else {
+                return null;
+            }
+        }
+
+        function isAudioURL(url) {
+            return /\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(url);
+        }
+
+        function saveAudios() {
+            localStorage.setItem('meditation_audios', JSON.stringify(savedAudios));
+        }
+
+        function renderAudioList() {
+            audioListEl.innerHTML = '';
+
+            // Header "None" option
+            const noneEl = document.createElement('div');
+            noneEl.className = `audio-item ${selectedAudioId === null ? 'selected' : ''}`;
+            noneEl.innerHTML = '<span>No Background Audio</span>';
+            noneEl.onclick = () => selectAudio(null);
+            audioListEl.appendChild(noneEl);
+
+            savedAudios.forEach((audio, index) => {
+                const el = document.createElement('div');
+                el.className = `audio-item ${selectedAudioId === audio.id ? 'selected' : ''}`;
+
+                let thumbnailHtml = '';
+                let titleHtml = `<span>${audio.name}</span>`;
+
+                if (audio.type === 'youtube') {
+                    thumbnailHtml = `<img src="https://img.youtube.com/vi/${audio.id}/default.jpg" style="width: 40px; height: 30px; object-fit: cover; border-radius: 4px; margin-right: 12px; flex-shrink: 0;">`;
+                    titleHtml = `<a href="https://www.youtube.com/watch?v=${audio.id}" target="_blank" onclick="event.stopPropagation()" style="color: inherit; text-decoration: none; border-bottom: 1px dotted var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${audio.name}</a>`;
+                } else {
+                    thumbnailHtml = `<span style="width: 40px; height: 30px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 4px; margin-right: 12px; font-size: 16px; flex-shrink: 0;">🎵</span>`;
+                }
+
+                el.innerHTML = `
+                        <div style="display: flex; align-items: center; flex: 1; overflow: hidden;">
+                            ${thumbnailHtml}
+                            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${titleHtml}</div>
+                        </div>
+                        <span class="delete-btn" onclick="deleteAudio(event, ${index})">✕</span>
+                    `;
+                el.onclick = (e) => {
+                    if (!e.target.classList.contains('delete-btn') && e.target.tagName !== 'A') selectAudio(audio.id);
+                };
+                audioListEl.appendChild(el);
+            });
+
+            updateAudioDisplay();
+        }
+
+        function deleteAudio(e, index) {
+            e.stopPropagation();
+            if (confirm("Delete this track?")) {
+                const deletedId = savedAudios[index].id;
+                savedAudios.splice(index, 1);
+                saveAudios();
+                if (selectedAudioId === deletedId) {
+                    selectedAudioId = null;
+                    localStorage.removeItem('last_audio_id');
+                }
+                renderAudioList();
+            }
+        }
+
+        function selectAudio(id) {
+            selectedAudioId = id;
+            if (id) {
+                localStorage.setItem('last_audio_id', id);
+            } else {
+                localStorage.removeItem('last_audio_id');
+            }
+            renderAudioList();
+            closeAudioModal();
+        }
+
+        function updateAudioDisplay() {
+            if (!selectedAudioId) {
+                selectedAudioName.textContent = 'None';
+            } else {
+                const audio = savedAudios.find(a => a.id === selectedAudioId);
+                selectedAudioName.textContent = audio ? audio.name : 'None';
+            }
+        }
+
+        function createDurationOption(min, autoSelect = false) {
+            const el = document.createElement('div');
+            el.className = `duration-option ${min === selectedDuration ? 'selected' : ''}`;
+            el.textContent = min;
+            el.onclick = () => {
+                selectDuration(min, el);
+                saveConfiguration();
+            };
+
+            // Insert before the last child (which is the + button) if it exists, else append
+            // But initially the + button isn't there during loop.
+            // When adding custom, we insert before the last element (the + button).
+
+            if (durationList.lastElementChild && durationList.lastElementChild.textContent === '+') {
+                durationList.insertBefore(el, durationList.lastElementChild);
+            } else {
+                durationList.appendChild(el);
+            }
+
+            if (autoSelect) {
+                selectDuration(min, el);
+            }
+        }
+
+        function selectDuration(min, el) {
+            selectedDuration = min;
+            document.querySelectorAll('.duration-option').forEach(d => d.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        // Bell sounds using audio elements
+        function playBell(type = 'start') {
+            let bell;
+            if (type === 'interval') {
+                bell = intervalBell;
+            } else if (type === 'end') {
+                bell = endBell;
+            } else {
+                bell = startBell;
+            }
+
+            if (bell) {
+                bell.currentTime = 0;
+                bell.play().catch(e => console.log('Bell play failed:', e));
+            }
+        }
+
+        function startSession() {
+            // Get Interval Setting (already set via selectedInterval variable)
+            // No need to read from select element anymore
+
+            // Request fullscreen
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(err => console.log('Fullscreen error:', err));
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) {
+                elem.msRequestFullscreen();
+            }
+
+            // Unlock AudioContext on user interaction
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            // Play start bell
+            playBell('start');
+
+            // Create session log
+            currentSessionId = Date.now();
+            sessionStartTime = new Date();
+            const startNote = startNoteInput.value.trim();
+
+            // Create initial log entry (emotions/causes will be updated async)
+            meditationLogs.push({
+                id: currentSessionId,
+                startTime: sessionStartTime.toISOString(),
+                endTime: null,
+                duration: selectedDuration,
+                startNote: startNote || null,
+                endNote: null,
+                emotions: [],
+                causes: [],
+                model: null,
+                tokens: null
+            });
+            saveLogs();
+
+            // Start Background Audio if selected
+            if (selectedAudioId) {
+                const audio = savedAudios.find(a => a.id === selectedAudioId);
+                if (audio) {
+                    if (audio.type === 'youtube') {
+                        currentAudioType = 'youtube';
+                        if (ytPlayer && ytPlayer.loadVideoById) {
+                            ytPlayer.loadVideoById(selectedAudioId);
+                            ytPlayer.setVolume(30);
+                        }
+                    } else if (audio.type === 'direct') {
+                        currentAudioType = 'direct';
+                        audioPlayer.src = audio.url;
+                        audioPlayer.volume = 0.3;
+                        audioPlayer.play();
+                    }
+                }
+            }
+
+            // Switch screens immediately
+            setupScreen.classList.remove('active');
+            timerScreen.classList.add('active');
+
+            totalSeconds = selectedDuration * 60;
+            remainingSeconds = totalSeconds;
+            isPaused = false;
+            updateDisplay();
+            updatePlayPauseIcon();
+
+            timerInterval = setInterval(tick, 1000);
+
+            // Only call Gemini API in background if note is not empty
+            if (startNote && geminiApiKey) {
+                getMotivationalContent(startNote).then(motivation => {
+                    if (motivation) {
+                        currentMotivation = motivation;
+                        quoteText.textContent = `\"${motivation.quote}\"`;
+                        quoteSupport.textContent = motivation.support;
+                        motivationSection.style.display = 'block';
+
+                        // Update log with emotions/causes
+                        const logIndex = meditationLogs.findIndex(l => l.id === currentSessionId);
+                        if (logIndex !== -1) {
+                            meditationLogs[logIndex].emotions = motivation.emotions || [];
+                            meditationLogs[logIndex].causes = motivation.causes || [];
+                            meditationLogs[logIndex].model = motivation.model || null;
+                            meditationLogs[logIndex].tokens = motivation.usage?.totalTokenCount || null;
+                            saveLogs();
+                        }
+                    }
+                });
+            }
+        }
+
+        function tick() {
+            if (isPaused) return;
+
+            if (remainingSeconds > 0) {
+                remainingSeconds--;
+                updateDisplay();
+                checkInterval();
+            } else {
+                playBell('end'); // End bell
+                stopTimer();
+            }
+        }
+
+        function checkInterval() {
+            const elapsed = totalSeconds - remainingSeconds;
+            if (elapsed === 0) return;
+
+            let shouldRing = false;
+
+            if (selectedInterval === "half") {
+                // Check if exactly halfway
+                // Use a small window or exact check? Exact is fine for 1s ticks usually
+                /* 
+                   If total is 10 mins (600s), half is 300s. 
+                   remaining will be 300.
+                */
+                if (remainingSeconds === totalSeconds / 2) shouldRing = true;
+            } else {
+                const intervalMin = parseInt(selectedInterval);
+                if (intervalMin > 0) {
+                    const intervalSec = intervalMin * 60;
+                    // Ring if elapsed is a multiple of interval
+                    // And not the very end (handled separately)
+                    if (elapsed % intervalSec === 0 && remainingSeconds > 0) {
+                        shouldRing = true;
+                    }
+                }
+            }
+
+            if (shouldRing) playBell('interval');
+        }
+
+        function updateDisplay() {
+            const m = Math.floor(remainingSeconds / 60).toString().padStart(2, '0');
+            const s = (remainingSeconds % 60).toString().padStart(2, '0');
+            const timeStr = `${m}:${s}`;
+            digitalClock.textContent = timeStr;
+
+            const progress = remainingSeconds / totalSeconds;
+            const offset = FULL_DASH_ARRAY * (1 - progress);
+            circleProgress.style.strokeDashoffset = offset;
+        }
+
+        function toggleTimer() {
+            isPaused = !isPaused;
+            updatePlayPauseIcon();
+
+            if (currentAudioType === 'youtube' && ytPlayer && ytPlayer.pauseVideo) {
+                if (isPaused) ytPlayer.pauseVideo();
+                else ytPlayer.playVideo();
+            } else if (currentAudioType === 'direct' && audioPlayer) {
+                if (isPaused) audioPlayer.pause();
+                else audioPlayer.play();
+            }
+        }
+
+        function updatePlayPauseIcon() {
+            if (isPaused) {
+                toggleBtn.innerHTML = '▶'; // Play
+            } else {
+                toggleBtn.innerHTML = '⏸'; // Pause
+            }
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+
+            // Prompt for end note
+            const endNote = prompt("How do you feel after meditation? (optional)");
+
+            // Update session log
+            if (currentSessionId) {
+                const logIndex = meditationLogs.findIndex(l => l.id === currentSessionId);
+                if (logIndex !== -1) {
+                    meditationLogs[logIndex].endTime = new Date().toISOString();
+                    meditationLogs[logIndex].endNote = endNote || null;
+                    saveLogs();
+                }
+            }
+
+            // Reset session
+            currentSessionId = null;
+            sessionStartTime = null;
+            startNoteInput.value = '';
+            currentMotivation = null;
+            motivationSection.style.display = 'none';
+
+            timerScreen.classList.remove('active');
+            setupScreen.classList.add('active');
+            // Reset ring
+            circleProgress.style.strokeDashoffset = 0;
+
+            // Exit fullscreen
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(err => console.log('Exit fullscreen error:', err));
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+
+            // Stop Audio
+            if (currentAudioType === 'youtube' && ytPlayer && ytPlayer.stopVideo) {
+                ytPlayer.stopVideo();
+            } else if (currentAudioType === 'direct' && audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+            }
+            currentAudioType = null;
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
