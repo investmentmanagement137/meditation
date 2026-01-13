@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meditation Timer</title>
+    <link rel="icon" type="image/png"
+        href="https://res.cloudinary.com/makegharghaderi/image/upload/v1768284587/Generated_Image_January_13__2026_-_11_54AM-removebg-preview_wgzhjh.png">
     <style>
         :root {
             --primary: #5C6BC0;
@@ -211,9 +213,9 @@
             background: linear-gradient(135deg, var(--primary) 0%, #7c8fd8 100%);
             color: white;
             border: none;
-            padding: 20px 24px;
-            border-radius: 12px;
-            font-size: 18px;
+            padding: 22px 32px;
+            border-radius: 16px;
+            font-size: 20px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -776,7 +778,7 @@
         </div>
 
         <div class="screen-footer">
-            <button class="btn-primary btn-begin" onclick="startSession()">Begin</button>
+            <button class="btn-primary btn-begin" onclick="startSession()">Start Now</button>
         </div>
     </div>
 
@@ -827,21 +829,13 @@
                 <h2>Background Audio</h2>
                 <span class="modal-close" onclick="closeAudioModal()">×</span>
             </div>
-
-            <!-- Add Section (Hidden by default) -->
-            <div id="add-section" class="add-section">
-                <input type="text" id="audio-url-input" class="input-field"
-                    placeholder="Paste YouTube or audio file URL...">
-                <button class="btn-primary" onclick="addAudioFromInput()" style="max-width: 100%;">Add Track</button>
-            </div>
-
-            <!-- Audio List -->
+            <input type="text" id="audio-url-input" class="input-field"
+                placeholder="Paste YouTube or audio file URL...">
+            <button class="btn-primary" onclick="addAudioFromInput()" style="margin-bottom: 16px; max-width: 100%;">Add
+                Track</button>
             <div id="audio-list" class="audio-list">
                 <!-- Populated by JS -->
             </div>
-
-            <!-- Add Track Button -->
-            <button class="add-track-btn" onclick="toggleAddSection()">+ Add Track</button>
         </div>
     </div>
 
