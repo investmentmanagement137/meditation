@@ -125,9 +125,6 @@
             gap: 12px;
             justify-content: center;
             align-items: center;
-            width: calc(100% + 48px);
-            margin-left: -24px;
-            margin-right: -24px;
         }
 
         .control-btn {
@@ -217,12 +214,11 @@
             border-radius: 16px;
             font-size: 20px;
             font-weight: 600;
+
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(92, 107, 192, 0.3);
-            width: calc(100% + 48px);
-            margin-left: -24px;
-            margin-right: -24px;
+            width: 100%;
             position: relative;
             overflow: hidden;
         }
@@ -1014,7 +1010,7 @@
 
     <script>
         // Config
-        let durations = JSON.parse(localStorage.getItem('meditation_durations') || '[5, 10, 15, 20, 30, 45, 60]');
+        let durations = JSON.parse(localStorage.getItem('meditation_durations') || '[5, 10, 15, 20, 30]');
         let selectedDuration = 10;
         let selectedInterval = localStorage.getItem('selected_interval') || "0";
         let customIntervals = JSON.parse(localStorage.getItem('custom_intervals') || '[]');
@@ -1080,7 +1076,8 @@
             loadConfiguration();
 
             // Render standard options
-            durations.forEach(min => {
+            // Sort for display, but keep storage order based on recency
+            [...durations].sort((a, b) => a - b).forEach(min => {
                 createDurationOption(min);
             });
 
@@ -2002,34 +1999,36 @@ Respond with ONLY the JSON, no markdown or explanation.`
             if (min > 0) {
                 document.querySelectorAll('.duration-option').forEach(d => d.classList.remove('selected'));
 
-                // Add to persistent list if not exists
-                if (!durations.includes(min)) {
-                    durations.push(min);
-                    durations.sort((a, b) => a - b);
+                // Add to list (Recent logic)
+                // Remove if exists, then add to front
+                durations = durations.filter(d => d !== min);
+                durations.unshift(min);
 
-                    // Keep only the 5 most recent custom durations (excluding default ones)
-                    const defaultDurations = [5, 10, 15, 20, 30, 45, 60];
-                    const customDurations = durations.filter(d => !defaultDurations.includes(d));
-                    if (customDurations.length > 5) {
-                        // Remove oldest custom durations
-                        const toRemove = customDurations.slice(0, customDurations.length - 5);
-                        durations = durations.filter(d => !toRemove.includes(d));
-                    }
-
-                    saveDurations();
-                    // Re-render list
-                    durationList.innerHTML = '';
-                    durations.forEach(d => createDurationOption(d, d === min));
-                    // Re-add custom button
-                    const customEl = document.createElement('div');
-                    customEl.className = 'duration-option';
-                    customEl.textContent = '+';
-                    customEl.onclick = () => openAddDurationModal();
-                    durationList.appendChild(customEl);
-                    selectDuration(min, durationList.children[durations.indexOf(min)]);
-                } else {
-                    createDurationOption(min, true);
+                // Limit to 5 items
+                if (durations.length > 5) {
+                    durations = durations.slice(0, 5);
                 }
+
+                saveDurations();
+
+                // Re-render list (Sorted)
+                durationList.innerHTML = '';
+                const sortedDurations = [...durations].sort((a, b) => a - b);
+                sortedDurations.forEach(d => createDurationOption(d, d === min));
+
+                // Re-add custom button
+                const customEl = document.createElement('div');
+                customEl.className = 'duration-option';
+                customEl.textContent = '+';
+                customEl.onclick = () => openAddDurationModal();
+                durationList.appendChild(customEl);
+
+                // Find correct child to select
+                const index = sortedDurations.indexOf(min);
+                if (index !== -1 && durationList.children[index]) {
+                    selectDuration(min, durationList.children[index]);
+                }
+
                 saveConfiguration();
                 closeAddDurationModal();
             }
