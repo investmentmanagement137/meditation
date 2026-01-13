@@ -148,17 +148,68 @@
             color: var(--text-primary);
         }
 
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--surface);
+            padding: 24px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--text-secondary);
+            background-color: var(--background);
+            color: var(--text-primary);
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+
         /* Audio List */
         .audio-list {
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-height: 150px;
-            overflow-y: auto;
+            margin-top: 16px;
         }
 
         .audio-item {
-            padding: 10px;
+            padding: 12px;
             border-radius: 8px;
             background-color: var(--background);
             cursor: pointer;
@@ -167,23 +218,44 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.2s;
+        }
+
+        .audio-item:hover {
+            border-color: var(--text-secondary);
         }
 
         .audio-item.selected {
             border-color: var(--primary);
-            color: var(--primary);
+            background-color: rgba(92, 107, 192, 0.1);
         }
 
         .audio-item .delete-btn {
             opacity: 0.5;
             cursor: pointer;
-            font-size: 16px;
-            padding: 4px;
+            font-size: 18px;
+            padding: 4px 8px;
         }
 
         .audio-item .delete-btn:hover {
             opacity: 1;
             color: red;
+        }
+
+        .audio-display {
+            padding: 12px;
+            background-color: var(--surface);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            border: 1px solid var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .audio-display:hover {
+            border-color: var(--primary);
         }
 
         /* Settings Card */
@@ -342,22 +414,34 @@
             </div>
         </div>
 
-        <div class="settings-card" style="margin-top: 16px;">
-            <div class="setting-row" style="margin-bottom: 12px;">
-                <span>Background Audio</span>
-                <button class="icon-btn" onclick="addAudio()" style="font-size: 24px; padding: 0;">+</button>
-            </div>
-            <div id="audio-list" class="audio-list">
-                <!-- Populated by JS -->
-            </div>
+        <div class="audio-display" onclick="openAudioModal()">
+            <span id="selected-audio-name">No Background Audio</span>
+            <span style="color: var(--text-secondary);">▼</span>
         </div>
 
-        <!-- Hidden YouTube Player -->
+        <!-- Hidden YouTube Player & Audio Element -->
         <div id="youtube-player" style="display:none; position: absolute; top: -9999px;"></div>
+        <audio id="audio-player" style="display:none;" loop></audio>
 
         <div style="flex:1"></div>
 
         <button class="btn-primary" onclick="startSession()">Begin</button>
+    </div>
+
+    <!-- Audio Selection Modal -->
+    <div id="audio-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Background Audio</h2>
+                <span class="modal-close" onclick="closeAudioModal()">×</span>
+            </div>
+            <input type="text" id="audio-url-input" class="input-field"
+                placeholder="Paste YouTube or audio file URL...">
+            <button class="btn-primary" onclick="addAudioFromInput()" style="max-width: 100%;">Add Track</button>
+            <div id="audio-list" class="audio-list">
+                <!-- Populated by JS -->
+            </div>
+        </div>
     </div>
 
     <!-- Active Timer Screen -->
@@ -402,8 +486,10 @@
 
         // Background Audio
         let savedAudios = JSON.parse(localStorage.getItem('meditation_audios') || '[]');
-        let selectedAudioId = null; // YouTube Video ID
+        let selectedAudioId = localStorage.getItem('last_audio_id') || null;
         let ytPlayer = null;
+        let audioPlayer = null;
+        let currentAudioType = null; // 'youtube' or 'direct'
 
         // Elements
         const setupScreen = document.getElementById('setup-screen');
@@ -414,6 +500,10 @@
         const toggleBtn = document.getElementById('toggle-btn');
         const intervalSelect = document.getElementById('interval-select');
         const audioListEl = document.getElementById('audio-list');
+        const audioModal = document.getElementById('audio-modal');
+        const audioUrlInput = document.getElementById('audio-url-input');
+        const selectedAudioName = document.getElementById('selected-audio-name');
+        audioPlayer = document.getElementById('audio-player');
 
         // Init
         function init() {
@@ -483,24 +573,56 @@
             console.log("YouTube Player Ready");
         }
 
+        // --- Modal Functions ---
+        function openAudioModal() {
+            audioModal.classList.add('active');
+            renderAudioList();
+        }
+
+        function closeAudioModal() {
+            audioModal.classList.remove('active');
+            audioUrlInput.value = '';
+        }
+
         // --- Audio Logic ---
-        function addAudio() {
-            const url = prompt("Enter YouTube URL (e.g. https://youtu.be/xyz...)");
+        async function addAudioFromInput() {
+            const url = audioUrlInput.value.trim();
             if (!url) return;
 
-            const name = prompt("Enter a name for this track:", "New Track");
-            if (!name) return;
-
             const vidId = extractVideoID(url);
-            if (!vidId) {
-                alert("Invalid YouTube URL");
-                return;
-            }
 
-            savedAudios.push({ id: vidId, name: name });
-            saveAudios();
-            renderAudioList();
-            selectAudio(vidId);
+            if (vidId) {
+                // YouTube URL
+                const title = await fetchYouTubeTitle(vidId);
+                savedAudios.push({ id: vidId, name: title, type: 'youtube' });
+                saveAudios();
+                renderAudioList();
+                selectAudio(vidId);
+                audioUrlInput.value = '';
+            } else if (isAudioURL(url)) {
+                // Direct audio file
+                const name = prompt("Enter a name for this track:", "Audio Track");
+                if (!name) return;
+                const audioId = 'audio_' + Date.now();
+                savedAudios.push({ id: audioId, name: name, type: 'direct', url: url });
+                saveAudios();
+                renderAudioList();
+                selectAudio(audioId);
+                audioUrlInput.value = '';
+            } else {
+                alert("Please enter a valid YouTube URL or audio file URL (.mp3, .wav, .ogg)");
+            }
+        }
+
+        async function fetchYouTubeTitle(videoId) {
+            try {
+                const response = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+                const data = await response.json();
+                return data.title || 'YouTube Track';
+            } catch (error) {
+                console.error('Error fetching title:', error);
+                return 'YouTube Track';
+            }
         }
 
         function extractVideoID(url) {
@@ -511,6 +633,10 @@
             } else {
                 return null;
             }
+        }
+
+        function isAudioURL(url) {
+            return /\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(url);
         }
 
         function saveAudios() {
@@ -539,15 +665,19 @@
                 };
                 audioListEl.appendChild(el);
             });
+
+            updateAudioDisplay();
         }
 
         function deleteAudio(e, index) {
             e.stopPropagation();
             if (confirm("Delete this track?")) {
+                const deletedId = savedAudios[index].id;
                 savedAudios.splice(index, 1);
                 saveAudios();
-                if (savedAudios.length === 0 || selectedAudioId === savedAudios[index]?.id) {
+                if (selectedAudioId === deletedId) {
                     selectedAudioId = null;
+                    localStorage.removeItem('last_audio_id');
                 }
                 renderAudioList();
             }
@@ -555,7 +685,22 @@
 
         function selectAudio(id) {
             selectedAudioId = id;
+            if (id) {
+                localStorage.setItem('last_audio_id', id);
+            } else {
+                localStorage.removeItem('last_audio_id');
+            }
             renderAudioList();
+            closeAudioModal();
+        }
+
+        function updateAudioDisplay() {
+            if (!selectedAudioId) {
+                selectedAudioName.textContent = 'No Background Audio';
+            } else {
+                const audio = savedAudios.find(a => a.id === selectedAudioId);
+                selectedAudioName.textContent = audio ? audio.name : 'No Background Audio';
+            }
         }
 
         function createDurationOption(min, autoSelect = false) {
@@ -620,9 +765,22 @@
             playBell();
 
             // Start Background Audio if selected
-            if (selectedAudioId && ytPlayer && ytPlayer.loadVideoById) {
-                ytPlayer.loadVideoById(selectedAudioId);
-                ytPlayer.setVolume(30); // Set to 30% volume for background
+            if (selectedAudioId) {
+                const audio = savedAudios.find(a => a.id === selectedAudioId);
+                if (audio) {
+                    if (audio.type === 'youtube') {
+                        currentAudioType = 'youtube';
+                        if (ytPlayer && ytPlayer.loadVideoById) {
+                            ytPlayer.loadVideoById(selectedAudioId);
+                            ytPlayer.setVolume(30);
+                        }
+                    } else if (audio.type === 'direct') {
+                        currentAudioType = 'direct';
+                        audioPlayer.src = audio.url;
+                        audioPlayer.volume = 0.3;
+                        audioPlayer.play();
+                    }
+                }
             }
 
             setupScreen.classList.remove('active');
@@ -694,9 +852,13 @@
         function toggleTimer() {
             isPaused = !isPaused;
             updatePlayPauseIcon();
-            if (ytPlayer && ytPlayer.pauseVideo) {
+
+            if (currentAudioType === 'youtube' && ytPlayer && ytPlayer.pauseVideo) {
                 if (isPaused) ytPlayer.pauseVideo();
                 else ytPlayer.playVideo();
+            } else if (currentAudioType === 'direct' && audioPlayer) {
+                if (isPaused) audioPlayer.pause();
+                else audioPlayer.play();
             }
         }
 
@@ -718,9 +880,13 @@
             circleProgress.style.strokeDashoffset = 0;
 
             // Stop Audio
-            if (ytPlayer && ytPlayer.stopVideo) {
+            if (currentAudioType === 'youtube' && ytPlayer && ytPlayer.stopVideo) {
                 ytPlayer.stopVideo();
+            } else if (currentAudioType === 'direct' && audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
             }
+            currentAudioType = null;
         }
 
         init();
