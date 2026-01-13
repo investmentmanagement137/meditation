@@ -110,6 +110,67 @@
             /* Chrome/Safari */
         }
 
+        /* Timer Controls */
+        .timer-controls {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, #7c8fd8 100%);
+            border: none;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(92, 107, 192, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .control-btn:hover::before {
+            left: 100%;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(92, 107, 192, 0.4);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .control-btn.stop {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .control-btn.stop:hover {
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+        }
+
         .duration-option {
             flex: 0 0 80px;
             height: 80px;
@@ -134,21 +195,44 @@
 
         /* Button */
         .btn-primary {
-            background-color: var(--primary);
-            color: var(--background);
+            background: linear-gradient(135deg, var(--primary) 0%, #7c8fd8 100%);
+            color: white;
             border: none;
             padding: 16px 48px;
-            border-radius: 30px;
+            border-radius: 50px;
             font-size: 18px;
             font-weight: 600;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(92, 107, 192, 0.3);
             width: 100%;
             max-width: 300px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(92, 107, 192, 0.4);
         }
 
         .btn-primary:active {
-            opacity: 0.8;
+            transform: translateY(0);
         }
 
         /* Toggle Switch & Dropdown */
@@ -218,7 +302,34 @@
             background-color: var(--background);
             color: var(--text-primary);
             font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .add-section {
+            display: none;
             margin-bottom: 16px;
+        }
+
+        .add-section.active {
+            display: block;
+        }
+
+        .add-track-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: transparent;
+            border: 2px dashed var(--text-secondary);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 12px;
+        }
+
+        .add-track-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
         }
 
         /* Audio List */
@@ -375,7 +486,7 @@
             margin-bottom: 60px;
         }
 
-        .timer-svg {
+        .timer-ring {
             transform: rotate(-90deg);
             width: 100%;
             height: 100%;
@@ -516,38 +627,41 @@
                 <h2>Background Audio</h2>
                 <span class="modal-close" onclick="closeAudioModal()">×</span>
             </div>
-            <input type="text" id="audio-url-input" class="input-field"
-                placeholder="Paste YouTube or audio file URL...">
-            <button class="btn-primary" onclick="addAudioFromInput()" style="max-width: 100%;">Add Track</button>
+
+            <!-- Add Section (Hidden by default) -->
+            <div id="add-section" class="add-section">
+                <input type="text" id="audio-url-input" class="input-field"
+                    placeholder="Paste YouTube or audio file URL...">
+                <button class="btn-primary" onclick="addAudioFromInput()" style="max-width: 100%;">Add Track</button>
+            </div>
+
+            <!-- Audio List -->
             <div id="audio-list" class="audio-list">
                 <!-- Populated by JS -->
             </div>
+
+            <!-- Add Track Button -->
+            <button class="add-track-btn" onclick="toggleAddSection()">+ Add Track</button>
         </div>
     </div>
 
     <!-- Active Timer Screen -->
     <div id="timer-screen" class="screen">
-        <div class="timer-container">
-            <svg class="timer-svg" viewBox="0 0 300 300">
-                <circle class="circle-bg" cx="150" cy="150" r="140"></circle>
-                <circle class="circle-progress" cx="150" cy="150" r="140"></circle>
-            </svg>
-            <div class="timer-text" id="time-display">10:00</div>
+        <div class="screen-content">
+            <div class="timer-container">
+                <svg class="timer-ring" viewBox="0 0 300 300">
+                    <circle class="circle-bg" cx="150" cy="150" r="140"></circle>
+                    <circle class="circle-progress" cx="150" cy="150" r="140"></circle>
+                </svg>
+                <div class="timer-text" id="time-display">00:00</div>
+            </div>
         </div>
 
-        <div class="controls">
-            <button class="icon-btn" id="toggle-btn" onclick="toggleTimer()">
-                <!-- Pause Icon by default -->
-                <svg viewBox="0 0 24 24">
-                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                </svg>
-            </button>
-
-            <button class="icon-btn" onclick="stopTimer()">
-                <svg viewBox="0 0 24 24">
-                    <path d="M6 6h12v12H6z" />
-                </svg>
-            </button>
+        <div class="screen-footer">
+            <div class="timer-controls">
+                <button class="control-btn" id="toggle-btn" onclick="toggleTimer()">▶</button>
+                <button class="control-btn stop" onclick="stopTimer()">■</button>
+            </div>
         </div>
     </div>
 
@@ -589,6 +703,7 @@
         const selectedAudioName = document.getElementById('selected-audio-name');
         const intervalModal = document.getElementById('interval-modal');
         const selectedIntervalName = document.getElementById('selected-interval-name');
+        const addSection = document.getElementById('add-section');
         audioPlayer = document.getElementById('audio-player');
         startBell = document.getElementById('start-bell');
         intervalBell = document.getElementById('interval-bell');
@@ -688,12 +803,21 @@
 
         function openAudioModal() {
             audioModal.classList.add('active');
+            addSection.classList.remove('active'); // Hide add section by default
             renderAudioList();
         }
 
         function closeAudioModal() {
             audioModal.classList.remove('active');
+            addSection.classList.remove('active');
             audioUrlInput.value = '';
+        }
+
+        function toggleAddSection() {
+            addSection.classList.toggle('active');
+            if (addSection.classList.contains('active')) {
+                audioUrlInput.focus();
+            }
         }
 
         // --- Audio Logic ---
@@ -717,6 +841,7 @@
                 renderAudioList();
                 selectAudio(vidId);
                 audioUrlInput.value = '';
+                addSection.classList.remove('active'); // Hide after adding
             } else if (isAudioURL(url)) {
                 // Direct audio file
                 const name = prompt("Enter a name for this track:", "Audio Track");
@@ -727,6 +852,7 @@
                 renderAudioList();
                 selectAudio(audioId);
                 audioUrlInput.value = '';
+                addSection.classList.remove('active'); // Hide after adding
             } else {
                 alert("Please enter a valid YouTube URL, playlist, or audio file URL (.mp3, .wav, .ogg)");
             }
@@ -749,9 +875,11 @@
                 // As a workaround, we'll extract from the URL and let user know
                 alert("Playlist detected! Note: Due to API limitations, please add individual videos from the playlist.");
                 audioUrlInput.value = '';
+                addSection.classList.remove('active');
             } catch (error) {
                 console.error('Error processing playlist:', error);
                 alert("Error processing playlist. Please add individual videos.");
+                addSection.classList.remove('active');
             }
         }
 
@@ -1006,11 +1134,9 @@
 
         function updatePlayPauseIcon() {
             if (isPaused) {
-                // Show Play Icon
-                toggleBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+                toggleBtn.innerHTML = '▶'; // Play
             } else {
-                // Show Pause Icon
-                toggleBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+                toggleBtn.innerHTML = '⏸'; // Pause
             }
         }
 
