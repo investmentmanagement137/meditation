@@ -1062,17 +1062,19 @@
 
     <!-- End Note Modal -->
     <div id="end-note-modal" class="modal">
-        <div class="modal-content" style="max-width: 400px;">
-            <div class="modal-header">
+        <div class="modal-content" style="max-width: 400px; overflow: hidden; display: flex; flex-direction: column;">
+            <div class="modal-header" style="flex-shrink: 0;">
                 <h2>How do you feel?</h2>
                 <span class="modal-close" onclick="closeEndNoteModal()">×</span>
             </div>
-            <div style="width: 100%; margin-top: 16px;">
+            <div style="width: 100%; margin-top: 16px; flex: 1; overflow-y: auto; min-height: 0;">
                 <textarea id="end-note-input" class="input-field"
                     placeholder="How do you feel after meditation? (optional)"
-                    style="width: 100%; box-sizing: border-box; min-height: 100px; resize: vertical; font-family: inherit;"></textarea>
+                    style="width: 100%; box-sizing: border-box; min-height: 100px; resize: vertical; font-family: inherit; margin-bottom: 0;"></textarea>
+            </div>
+            <div style="flex-shrink: 0; padding-top: 12px;">
                 <button class="btn-primary" onclick="saveEndNote()"
-                    style="width: 100%; max-width: none; margin-top: 12px; margin-left: 0; margin-right: 0;">Continue</button>
+                    style="width: 100%; max-width: none; margin: 0;">Continue</button>
             </div>
         </div>
     </div>
