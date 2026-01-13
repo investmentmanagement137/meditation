@@ -822,21 +822,16 @@
         </div>
     </div>
 
-    <!-- Audio Selection Modal -->
-    <div id="audio-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Background Audio</h2>
-                <span class="modal-close" onclick="closeAudioModal()">×</span>
-            </div>
-            <input type="text" id="audio-url-input" class="input-field"
-                placeholder="Paste YouTube or audio file URL...">
-            <button class="btn-primary" onclick="addAudioFromInput()" style="margin-bottom: 16px; max-width: 100%;">Add
-                Track</button>
-            <div id="audio-list" class="audio-list">
-                <!-- Populated by JS -->
-            </div>
-        </div>
+    <!-- Audio Selection Modal -->\n <div id=\"audio-modal\" class=\"modal\">\n <div class=\"modal-content\">\n <div
+                class=\"modal-header\">\n <h2>Background Audio</h2>\n <span class=\"modal-close\"
+                    onclick=\"closeAudioModal()\">\u00d7</span>\n </div>\n <div id=\"audio-list\" class=\"audio-list\">
+                \n <!-- Populated by JS -->\n </div>\n <button class=\"add-track-btn\" onclick=\"openAddAudioModal()\">+
+                Add New Track</button>\n </div>\n </div>\n\n <!-- Add New Audio Modal -->\n <div id=\"add-audio-modal\"
+        class=\"modal\">\n <div class=\"modal-content\" style=\"max-width: 400px;\">\n <div class=\"modal-header\">\n
+                <h2>Add New Audio</h2>\n <span class=\"modal-close\" onclick=\"closeAddAudioModal()\">\u00d7</span>\n
+            </div>\n <input type=\"text\" id=\"audio-url-input\" class=\"input-field\" style=\"margin-bottom: 16px;\"
+                placeholder=\"Paste YouTube or audio file URL...\">\n <button class=\"btn-primary\"
+                onclick=\"addAudioFromInput()\" style=\"max-width: 100%; margin: 0;\">Add Track</button>\n </div>\n
     </div>
 
     <!-- Active Timer Screen -->
