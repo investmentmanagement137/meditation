@@ -1696,9 +1696,14 @@ Respond with ONLY the JSON, no markdown or explanation.`
                 const title = await fetchYouTubeTitle(vidId);
                 savedAudios.push({ id: vidId, name: title, type: 'youtube' });
                 saveAudios();
+
+                // Select without closing parent
+                selectedAudioId = vidId;
+                localStorage.setItem('last_audio_id', vidId);
                 renderAudioList();
-                selectAudio(vidId);
+
                 closeAddAudioModal();
+                openAudioModal();
             } else if (isAudioURL(url)) {
                 // Direct audio file
                 const name = prompt("Enter a name for this track:", "Audio Track");
@@ -1706,9 +1711,14 @@ Respond with ONLY the JSON, no markdown or explanation.`
                 const audioId = 'audio_' + Date.now();
                 savedAudios.push({ id: audioId, name: name, type: 'direct', url: url });
                 saveAudios();
+
+                // Select without closing parent
+                selectedAudioId = audioId;
+                localStorage.setItem('last_audio_id', audioId);
                 renderAudioList();
-                selectAudio(audioId);
+
                 closeAddAudioModal();
+                openAudioModal();
             } else {
                 alert("Please enter a valid YouTube URL, playlist, or audio file URL (.mp3, .wav, .ogg)");
             }
@@ -1732,8 +1742,15 @@ Respond with ONLY the JSON, no markdown or explanation.`
                 // Playlist URL with a specific video - add that video
                 const title = await fetchYouTubeTitle(videoId);
                 savedAudios.push({ id: videoId, name: title, type: 'youtube' });
+                saveAudios();
+                // Select it?
+                selectedAudioId = videoId;
+                localStorage.setItem('last_audio_id', videoId);
+
+                renderAudioList();
                 alert("Playlist detected! Note: Full playlist extraction requires YouTube API key. Please add individual videos.");
                 closeAddAudioModal();
+                openAudioModal();
             } else {
                 // Pure playlist URL without specific video
                 alert("Playlist detected! Unfortunately, extracting all videos from a playlist requires YouTube Data API key.\n\nTo add videos:\n1. Open the playlist on YouTube\n2. Copy individual video URLs\n3. Paste them here one by one");
@@ -2218,6 +2235,7 @@ Respond with ONLY the JSON, no markdown or explanation.`
                 }
                 renderIntervalList();
                 closeAddIntervalModal();
+                openIntervalModal();
             }
         }
 
