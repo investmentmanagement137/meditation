@@ -113,24 +113,23 @@
         /* Timer Controls */
         .timer-controls {
             display: flex;
-            gap: 16px;
+            gap: 12px;
             justify-content: center;
             align-items: center;
             width: 100%;
-            max-width: 300px;
         }
 
         .control-btn {
             background: linear-gradient(135deg, var(--primary) 0%, #7c8fd8 100%);
             border: none;
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
+            flex: 1;
+            padding: 18px 24px;
+            border-radius: 12px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 20px;
             color: white;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(92, 107, 192, 0.3);
@@ -154,12 +153,12 @@
         }
 
         .control-btn:hover {
-            transform: scale(1.1);
+            transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(92, 107, 192, 0.4);
         }
 
         .control-btn:active {
-            transform: scale(0.95);
+            transform: translateY(0);
         }
 
         .control-btn.stop {
@@ -198,15 +197,14 @@
             background: linear-gradient(135deg, var(--primary) 0%, #7c8fd8 100%);
             color: white;
             border: none;
-            padding: 16px 48px;
-            border-radius: 50px;
+            padding: 18px 24px;
+            border-radius: 12px;
             font-size: 18px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(92, 107, 192, 0.3);
             width: 100%;
-            max-width: 300px;
             position: relative;
             overflow: hidden;
         }
@@ -397,7 +395,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 20px;
+            padding: 18px 24px;
             background-color: var(--surface);
             border-radius: 12px;
             margin-bottom: 12px;
@@ -478,18 +476,20 @@
             transform: translateX(22px);
         }
 
-        /* Timer Display */
+        /* Timer Screen */
         .timer-container {
-            position: relative;
-            width: 300px;
-            height: 300px;
-            margin-bottom: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            width: 100%;
         }
 
         .timer-ring {
             transform: rotate(-90deg);
-            width: 100%;
-            height: 100%;
+            width: 280px;
+            height: 280px;
         }
 
         .circle-bg {
@@ -514,8 +514,10 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 64px;
+            font-size: 48px;
             font-weight: 300;
+            letter-spacing: 2px;
+            color: var(--text-primary);
             font-feature-settings: "tnum";
             font-variant-numeric: tabular-nums;
         }
